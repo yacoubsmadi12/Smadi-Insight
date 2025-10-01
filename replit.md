@@ -71,3 +71,11 @@ npm run db:push
 - Server binds to `0.0.0.0:5000` for proper external access
 - Database schema is managed via Drizzle ORM, no manual migrations needed
 - AI report generation requires GEMINI_API_KEY to be set
+- Dashboard automatically refreshes every 10 seconds to show updated statistics
+- After uploading logs, the dashboard cache is automatically invalidated to show new data immediately
+
+## Replit Setup Complete
+- ✅ PostgreSQL database provisioned and schema migrated
+- ✅ Workflow configured for port 5000 with webview output
+- ✅ Deployment configured for autoscale with build and start commands
+- ✅ Dashboard refresh issue fixed with automatic cache invalidation
