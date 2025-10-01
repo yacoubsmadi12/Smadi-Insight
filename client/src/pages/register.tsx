@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { login } from "@/lib/auth";
+import { register } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,20 +8,32 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: t("common.error"),
+        description: language === "ar" ? "كلمات المرور غير متطابقة" : "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(email, password);
+      await register(email, password, name);
       navigate("/dashboard");
     } catch (error: any) {
       toast({
@@ -43,11 +55,27 @@ export default function LoginPage() {
               <div className="w-16 h-16 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-3xl font-bold text-primary-foreground">YS</span>
               </div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">{t("common.brand")}</h1>
-              <p className="text-sm text-muted-foreground">{t("common.tagline")}</p>
+              <h1 className="text-2xl font-bold text-foreground mb-1">{t("auth.signUp")}</h1>
+              <p className="text-sm text-muted-foreground">
+                {language === "ar" ? "إنشاء حساب جديد" : "Create a new account"}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  {language === "ar" ? "الاسم" : "Name"}
+                </Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={language === "ar" ? "الاسم الكامل" : "Full name"}
+                  required
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="email">{t("auth.email")}</Label>
                 <Input
@@ -72,25 +100,29 @@ export default function LoginPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center space-x-2">
-                  <input type="checkbox" className="w-4 h-4 text-primary border-border rounded" />
-                  <span className="text-sm text-muted-foreground">{t("auth.rememberMe")}</span>
-                </label>
-                <a href="#" className="text-sm text-primary hover:underline">
-                  {t("auth.forgotPassword")}
-                </a>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">
+                  {language === "ar" ? "تأكيد كلمة المرور" : "Confirm Password"}
+                </Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? t("common.loading") : t("auth.login")}
+                {loading ? t("common.loading") : t("auth.signUp")}
               </Button>
             </form>
 
             <div className="mt-6 text-center text-sm text-muted-foreground">
-              {t("auth.noAccount")}{" "}
-              <a href="/register" className="text-primary hover:underline font-medium">
-                {t("auth.signUp")}
+              {language === "ar" ? "لديك حساب بالفعل؟" : "Already have an account?"}{" "}
+              <a href="/login" className="text-primary hover:underline font-medium">
+                {t("auth.login")}
               </a>
             </div>
 
