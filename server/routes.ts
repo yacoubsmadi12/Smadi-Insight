@@ -17,7 +17,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
       const { email, password, name } = req.body;
-      console.log("Register request body:", { email, password: password ? "***" : undefined, name });
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {

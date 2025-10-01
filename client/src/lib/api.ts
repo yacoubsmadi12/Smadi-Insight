@@ -72,7 +72,7 @@ export async function apiCall(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+  if (options.body && !(options.body instanceof FormData) && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
 
