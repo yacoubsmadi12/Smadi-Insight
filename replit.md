@@ -31,9 +31,12 @@ A full-stack employee management and monitoring system with AI-powered reporting
 ## Features
 - User authentication (login/register)
 - Employee management (CRUD operations)
+  - Add/Edit employee dialog with comprehensive form
+  - Automatic AI report generation on employee create/update
+  - Job description and rules tracking
 - Activity log tracking
 - CSV/JSON file upload for bulk data
-- AI-powered performance report generation
+- AI-powered performance report generation (automatic & manual)
 - Multi-language support (English/Arabic)
 - Dark mode support
 
@@ -73,6 +76,17 @@ npm run db:push
 - AI report generation requires GEMINI_API_KEY to be set
 - Dashboard automatically refreshes every 10 seconds to show updated statistics
 - After uploading logs, the dashboard cache is automatically invalidated to show new data immediately
+- Employee dialog automatically triggers AI report generation when job description is added/updated
+- All mutations properly invalidate employees, stats, and reports caches for instant UI updates
+- Backend validates all employee data with Zod schemas before database operations
+
+## Recent Changes (October 1, 2025)
+- ✅ Employee template/form feature implemented with EmployeeDialog component
+- ✅ Add/Edit functionality for employees with comprehensive form fields
+- ✅ Automatic AI report generation on employee create/update
+- ✅ Backend Zod validation for all employee mutations
+- ✅ Proper cache invalidation for employees, stats, and reports
+- ✅ GEMINI_API_KEY validation with clear error messages
 
 ## Replit Setup Complete
 - ✅ PostgreSQL database provisioned and schema migrated
