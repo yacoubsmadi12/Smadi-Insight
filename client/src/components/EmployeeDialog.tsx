@@ -61,11 +61,7 @@ export default function EmployeeDialog({
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/employees", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      return apiRequest("POST", "/api/employees", data);
     },
     onSuccess: () => {
       toast({
@@ -88,11 +84,7 @@ export default function EmployeeDialog({
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest(`/api/employees/${employee?.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      return apiRequest("PATCH", `/api/employees/${employee?.id}`, data);
     },
     onSuccess: () => {
       toast({

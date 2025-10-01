@@ -134,6 +134,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertEmployeeSchema.parse(req.body);
       const employee = await storage.createEmployee(validatedData);
+      
+      const logs = await storage.getLogs({ employeeId: employee.id });
+      if (logs.length > 0 && employee.jobDescription) {
+        try {
+          const reportData = await generateEmployeeReport(employee, logs, "All Time");
+          await storage.createReport({
+            employeeId: employee.id,
+            reportType: "performance",
+            dateRange: "All Time",
+            summary: reportData.summary,
+            actions: reportData.actions,
+            risks: reportData.risks,
+            violations: reportData.violations,
+            nextSteps: reportData.nextSteps,
+            metrics: reportData.metrics,
+          });
+        } catch (reportError) {
+          console.error("Failed to generate initial report:", reportError);
+        }
+      }
+      
       res.status(201).json(employee);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
@@ -143,6 +164,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/employees/:id", authenticateToken, async (req: Request, res: Response) => {
     try {
       const employee = await storage.updateEmployee(req.params.id, req.body);
+      
+      if (req.body.jobDescription || req.body.rules) {
+        const logs = await storage.getLogs({ employeeId: employee.id });
+        if (logs.length > 0) {
+          try {
+            const reportData = await generateEmployeeReport(employee, logs, "All Time");
+            await storage.createReport({
+              employeeId: employee.id,
+              reportType: "performance",
+              dateRange: "All Time",
+              summary: reportData.summary,
+              actions: reportData.actions,
+              risks: reportData.risks,
+              violations: reportData.violations,
+              nextSteps: reportData.nextSteps,
+              metrics: reportData.metrics,
+            });
+          } catch (reportError) {
+            console.error("Failed to generate updated report:", reportError);
+          }
+        }
+      }
+      
       res.json(employee);
     } catch (error: any) {
       res.status(400).json({ message: error.message });
