@@ -132,7 +132,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLogs(insertLogs: InsertLog[]): Promise<Log[]> {
-    return db.insert(logs).values(insertLogs).returning();
+    const BATCH_SIZE = 100;
+    const allCreatedLogs: Log[] = [];
+
+    for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
+      const batch = insertLogs.slice(i, i + BATCH_SIZE);
+      const createdBatch = await db.insert(logs).values(batch).returning();
+      allCreatedLogs.push(...createdBatch);
+    }
+
+    return allCreatedLogs;
   }
 
   // Report methods
