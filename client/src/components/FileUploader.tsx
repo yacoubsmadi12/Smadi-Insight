@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiCall } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
 
 interface FileUploaderProps {
   onUploadSuccess?: () => void;
@@ -80,6 +81,10 @@ export default function FileUploader({ onUploadSuccess }: FileUploaderProps) {
         title: "Upload successful",
         description: data.message,
       });
+
+      queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/logs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
 
       if (onUploadSuccess) {
         onUploadSuccess();

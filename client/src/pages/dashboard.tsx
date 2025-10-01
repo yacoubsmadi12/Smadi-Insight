@@ -11,6 +11,7 @@ export default function DashboardPage() {
       const res = await apiCall("/api/stats");
       return res.json();
     },
+    refetchInterval: 10000,
   });
 
   return (
