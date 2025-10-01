@@ -1,0 +1,80 @@
+{
+  "common": {
+    "brand": "Smadi Insight",
+    "tagline": "Powered by Yacoub Smadi",
+    "search": "Search...",
+    "filter": "Filter",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "auth": {
+    "login": "Sign In",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "signUp": "Sign up"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "employees": "Employees",
+    "logs": "Upload Logs",
+    "reports": "Reports",
+    "activity": "Activity Logs",
+    "settings": "Settings"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Overview of your analytics and insights",
+    "totalEmployees": "Total Employees",
+    "reportsGenerated": "Reports Generated",
+    "activeLogs": "Active Logs",
+    "aiInsights": "AI Insights"
+  },
+  "employees": {
+    "title": "Employees",
+    "subtitle": "Manage your team members and their profiles",
+    "addEmployee": "Add Employee",
+    "searchPlaceholder": "Search employees by name, email, or role...",
+    "allRoles": "All Roles",
+    "allDepartments": "All Departments",
+    "name": "Name",
+    "role": "Role",
+    "department": "Department",
+    "status": "Status",
+    "lastActivity": "Last Activity",
+    "actions": "Actions"
+  },
+  "reports": {
+    "title": "AI-Powered Reports",
+    "subtitle": "View and analyze generated insights",
+    "generateReport": "Generate Report",
+    "viewDetails": "View Details",
+    "summary": "Summary",
+    "actions": "Actions",
+    "risks": "Risks",
+    "violations": "Violations",
+    "nextSteps": "Next Steps"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage your account preferences and application settings",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "security": "Security",
+    "notifications": "Notifications",
+    "theme": "Theme",
+    "language": "Language",
+    "saveChanges": "Save Changes"
+  }
+}

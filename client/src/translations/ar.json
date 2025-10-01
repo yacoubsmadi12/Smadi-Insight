@@ -1,0 +1,80 @@
+{
+  "common": {
+    "brand": "سمادي إنسايت",
+    "tagline": "مدعوم من يعقوب سمادي",
+    "search": "بحث...",
+    "filter": "تصفية",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "view": "عرض",
+    "close": "إغلاق",
+    "loading": "جاري التحميل...",
+    "error": "خطأ",
+    "success": "نجح"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "register": "التسجيل",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "rememberMe": "تذكرني",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "noAccount": "ليس لديك حساب؟",
+    "signUp": "سجل الآن"
+  },
+  "nav": {
+    "dashboard": "لوحة التحكم",
+    "employees": "الموظفون",
+    "logs": "رفع السجلات",
+    "reports": "التقارير",
+    "activity": "سجلات النشاط",
+    "settings": "الإعدادات"
+  },
+  "dashboard": {
+    "title": "لوحة التحكم",
+    "subtitle": "نظرة عامة على التحليلات والرؤى",
+    "totalEmployees": "إجمالي الموظفين",
+    "reportsGenerated": "التقارير المنشأة",
+    "activeLogs": "السجلات النشطة",
+    "aiInsights": "رؤى الذكاء الاصطناعي"
+  },
+  "employees": {
+    "title": "الموظفون",
+    "subtitle": "إدارة أعضاء فريقك وملفاتهم الشخصية",
+    "addEmployee": "إضافة موظف",
+    "searchPlaceholder": "البحث عن الموظفين بالاسم أو البريد الإلكتروني أو الدور...",
+    "allRoles": "جميع الأدوار",
+    "allDepartments": "جميع الأقسام",
+    "name": "الاسم",
+    "role": "الدور",
+    "department": "القسم",
+    "status": "الحالة",
+    "lastActivity": "آخر نشاط",
+    "actions": "الإجراءات"
+  },
+  "reports": {
+    "title": "التقارير المدعومة بالذكاء الاصطناعي",
+    "subtitle": "عرض وتحليل الرؤى المنشأة",
+    "generateReport": "إنشاء تقرير",
+    "viewDetails": "عرض التفاصيل",
+    "summary": "الملخص",
+    "actions": "الإجراءات",
+    "risks": "المخاطر",
+    "violations": "الانتهاكات",
+    "nextSteps": "الخطوات التالية"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "subtitle": "إدارة تفضيلات حسابك وإعدادات التطبيق",
+    "profile": "الملف الشخصي",
+    "preferences": "التفضيلات",
+    "security": "الأمان",
+    "notifications": "الإشعارات",
+    "theme": "المظهر",
+    "language": "اللغة",
+    "saveChanges": "حفظ التغييرات"
+  }
+}
