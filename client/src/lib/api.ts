@@ -52,9 +52,21 @@ export async function apiCall(
 ): Promise<Response> {
   let token = getAccessToken();
 
-  const headers: HeadersInit = {
-    ...options.headers,
-  };
+  const headers: Record<string, string> = {};
+  
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, value]) => {
+        headers[key] = value;
+      });
+    } else {
+      Object.assign(headers, options.headers);
+    }
+  }
 
   if (token) {
     headers.Authorization = `Bearer ${token}`;
