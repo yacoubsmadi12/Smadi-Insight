@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const employee = await storage.createEmployee(validatedData);
       
       const logs = await storage.getLogs({ employeeId: employee.id });
-      if (logs.length > 0 && employee.jobDescription) {
+      if (logs.length > 0 && employee.jobDescription && process.env.GEMINI_API_KEY) {
         try {
           const reportData = await generateEmployeeReport(employee, logs, "All Time");
           await storage.createReport({
@@ -163,11 +163,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/employees/:id", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const employee = await storage.updateEmployee(req.params.id, req.body);
+      const updateSchema = insertEmployeeSchema.partial();
+      const validatedData = updateSchema.parse(req.body);
+      const employee = await storage.updateEmployee(req.params.id, validatedData);
       
-      if (req.body.jobDescription || req.body.rules) {
+      if ((req.body.jobDescription || req.body.rules) && employee.jobDescription) {
         const logs = await storage.getLogs({ employeeId: employee.id });
-        if (logs.length > 0) {
+        if (logs.length > 0 && process.env.GEMINI_API_KEY) {
           try {
             const reportData = await generateEmployeeReport(employee, logs, "All Time");
             await storage.createReport({
@@ -295,6 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reports/generate", authenticateToken, async (req: Request, res: Response) => {
     try {
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(503).json({ message: "AI report generation is not configured. GEMINI_API_KEY is missing." });
+      }
+
       const { employeeId, dateRange, reportType } = req.body;
 
       const employee = await storage.getEmployee(employeeId);

@@ -70,6 +70,7 @@ export default function EmployeeDialog({
       });
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
       onOpenChange(false);
       form.reset();
     },
@@ -93,6 +94,7 @@ export default function EmployeeDialog({
       });
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports"] });
       onOpenChange(false);
     },
     onError: (error: any) => {
