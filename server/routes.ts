@@ -251,30 +251,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/reports/generate", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const { employeeId, startDate, endDate, reportType } = req.body;
+      const { employeeId, dateRange, reportType } = req.body;
 
       const employee = await storage.getEmployee(employeeId);
       if (!employee) {
         return res.status(404).json({ message: "Employee not found" });
       }
 
+      const endDate = new Date();
+      let startDate = new Date();
+      let dateRangeText = "";
+
+      switch (dateRange) {
+        case "last-7-days":
+          startDate.setDate(endDate.getDate() - 7);
+          dateRangeText = "Last 7 Days";
+          break;
+        case "last-30-days":
+          startDate.setDate(endDate.getDate() - 30);
+          dateRangeText = "Last 30 Days";
+          break;
+        case "last-90-days":
+          startDate.setDate(endDate.getDate() - 90);
+          dateRangeText = "Last 90 Days";
+          break;
+        default:
+          startDate.setDate(endDate.getDate() - 30);
+          dateRangeText = "Last 30 Days";
+      }
+
       const logs = await storage.getLogs({
         employeeId,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        startDate,
+        endDate,
       });
 
       if (logs.length === 0) {
         return res.status(400).json({ message: "No logs found for the specified period" });
       }
 
-      const dateRange = `${new Date(startDate).toLocaleDateString()} - ${new Date(endDate).toLocaleDateString()}`;
-      const reportData = await generateEmployeeReport(employee, logs, dateRange);
+      const reportData = await generateEmployeeReport(employee, logs, dateRangeText);
 
       const report = await storage.createReport({
         employeeId,
         reportType: reportType || "performance",
-        dateRange,
+        dateRange: dateRangeText,
         summary: reportData.summary,
         actions: reportData.actions,
         risks: reportData.risks,
