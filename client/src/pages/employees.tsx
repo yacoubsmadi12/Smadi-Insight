@@ -6,9 +6,14 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import EmployeeDialog from "@/components/EmployeeDialog";
+import { type Employee } from "@shared/schema";
+import { Edit } from "lucide-react";
 
 export default function EmployeesPage() {
   const [search, setSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>(undefined);
 
   const { data: employees } = useQuery({
     queryKey: ["/api/employees", search],
@@ -29,7 +34,13 @@ export default function EmployeesPage() {
               <h2 className="text-2xl font-bold text-foreground">Employees</h2>
               <p className="text-sm text-muted-foreground">Manage your team members</p>
             </div>
-            <Button>
+            <Button
+              onClick={() => {
+                setSelectedEmployee(undefined);
+                setDialogOpen(true);
+              }}
+              data-testid="button-add-employee"
+            >
               <i className="fas fa-plus mr-2"></i>
               Add Employee
             </Button>
@@ -88,9 +99,22 @@ export default function EmployeesPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <Link href={`/employees/${employee.id}`}>
-                        <a className="text-primary hover:underline text-sm">View</a>
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/employees/${employee.id}`}>
+                          <a className="text-primary hover:underline text-sm">View</a>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedEmployee(employee);
+                            setDialogOpen(true);
+                          }}
+                          data-testid={`button-edit-employee-${employee.id}`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -99,6 +123,12 @@ export default function EmployeesPage() {
           </div>
         </div>
       </div>
+
+      <EmployeeDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        employee={selectedEmployee}
+      />
     </div>
   );
 }
