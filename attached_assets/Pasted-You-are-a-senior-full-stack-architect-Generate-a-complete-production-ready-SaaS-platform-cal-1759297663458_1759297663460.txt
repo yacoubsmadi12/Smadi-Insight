@@ -1,0 +1,85 @@
+You are a senior full-stack architect.  
+Generate a **complete production-ready SaaS platform** called **"Smadi Insight"** (branded by Yacoub Smadi).  
+The platform must include both **Frontend (Web Client)** and **Backend (API)**, integrated with **MySQL** and **Google Gemini** for AI-powered analysis.
+
+--- General Requirements ---
+- Use **Docker Compose** to orchestrate:
+  - frontend (Next.js app)
+  - backend (Express.js API)
+  - db (MySQL 8.x)
+- Full TypeScript support (strict mode).
+- Modular, scalable, enterprise-grade architecture.
+- Branded everywhere: *"Smadi Insight • Powered by Yacoub Smadi"*.
+
+--- 1) Frontend (Next.js 14+ App Router) ---
+- **Stack**: Next.js (App Router) + TypeScript + TailwindCSS + shadcn/ui.
+- **State/Data**: React Query (Tanstack).
+- **Auth**: JWT auth (login → backend).
+- **i18n**: English + Arabic (RTL support).
+- **Branding**: Emerald + Olive (#059669, #708238), with YS logo placeholder.
+- **Pages & Routes**:
+  - `/login` → login form → POST /api/auth/login
+  - `/dashboard` → overview cards + charts
+  - `/employees` → table with search/pagination
+  - `/employees/[id]` → employee profile, JD, rules, reports
+  - `/logs` → upload & view logs (drag/drop)
+  - `/reports` → filter by employee/date → show AI summaries
+  - `/settings` → profile, language switch, theme toggle
+- **Components**: Cards, Tables, Modals, Forms, FileUploader, Charts (Recharts).
+- **Features**: 
+  - Dark/light theme toggle
+  - Notifications/toasts
+  - Loading skeletons
+- **Integration**: All data from backend API via Axios wrapper in `lib/api.ts`.
+
+--- 2) Backend (Express.js + MySQL + Prisma) ---
+- **Stack**: Node.js (Express + TypeScript).
+- **DB**: MySQL with Prisma ORM.
+- **Security**:
+  - JWT auth (access + refresh tokens)
+  - Helmet, CORS config, rate limiting
+  - Input validation (zod/Joi)
+- **Logging**: Winston logger.
+- **API Routes**:
+  - Auth → `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`
+  - Employees → CRUD, list, details
+  - Logs → upload (CSV/JSON), query by filters
+  - Reports → generate (with Gemini) & fetch
+- **Gemini Service**:
+  - `generateReport(employeeId, dateRange)`:
+    - Fetch logs
+    - Build structured prompt (JD + Rules + logs)
+    - Call Gemini API (via key in env)
+    - Save structured JSON result in Reports table
+- **Cron Jobs**: node-cron for daily/weekly summaries.
+- **Docs**: Swagger/OpenAPI at `/api/docs`.
+
+--- 3) Database Schema (MySQL) ---
+Tables:
+- **User** → id, email, passwordHash, role
+- **Employee** → id, name, email, role, jd (TEXT), rules (TEXT)
+- **Log** → id, employeeId FK, ts, source, action, details
+- **Report** → id, employeeId FK, date, summary TEXT, actions JSON, risks JSON, notAllowed JSON, nextSteps JSON
+
+--- 4) Deployment & DevOps ---
+- **Docker Compose**:
+  - Service 1: `frontend` (Next.js)
+  - Service 2: `backend` (Express + Prisma + API)
+  - Service 3: `db` (MySQL + volume + init script)
+- `.env` files for frontend & backend:
+  - FRONTEND: `NEXT_PUBLIC_API_URL`
+  - BACKEND: `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `GEMINI_API_KEY`
+- Backend exposes port 4000, Frontend 3000, MySQL 3306.
+- Nginx/Reverse Proxy optional for production SSL.
+
+--- 5) Deliverables ---
+- Complete **Next.js frontend project** (with `/app` routes & components).
+- Complete **Express backend project** (with routes, controllers, services).
+- Prisma schema + migrations for MySQL.
+- Dockerfile for frontend & backend.
+- `docker-compose.yml` to run all services together.
+- README.md with setup instructions.
+
+--- Branding ---
+Every UI screen and API doc must mention:
+**"Smadi Insight • Powered by Yacoub Smadi"**.
