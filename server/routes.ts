@@ -6,6 +6,8 @@ import { hashPassword, comparePassword, generateAccessToken, generateRefreshToke
 import { parseCSV, parseJSON, validateLogEntry } from "./services/logs";
 import { generateEmployeeReport } from "./services/gemini";
 import { insertEmployeeSchema, insertLogSchema } from "@shared/schema";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -192,8 +194,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const validLogs = parsedLogs.filter(validateLogEntry);
+      
       if (validLogs.length === 0) {
         return res.status(400).json({ message: "No valid log entries found" });
+      }
+
+      const uniqueEmployeeIds = Array.from(new Set(validLogs.map(log => log.employeeId)));
+      const allEmployees = await storage.getEmployees({});
+      const existingIds = new Set(allEmployees.map(emp => emp.id));
+      const newEmployees = uniqueEmployeeIds.filter(id => !existingIds.has(id));
+      
+      for (const employeeId of newEmployees) {
+        await db.execute(sql`
+          INSERT INTO employees (id, name, email, role, department, status)
+          VALUES (${employeeId}, ${employeeId}, ${employeeId + '@system.local'}, 'System User', 'System', 'active')
+        `);
       }
 
       const createdLogs = await storage.createLogs(validLogs);
