@@ -32,8 +32,8 @@ export default function Sidebar() {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <Link key={item.path} href={item.path}>
-            <a
-              className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors ${
+            <div
+              className={`flex items-center space-x-3 px-3 py-2 rounded-md transition-colors cursor-pointer ${
                 location === item.path
                   ? "bg-accent text-accent-foreground"
                   : "hover:bg-muted text-muted-foreground hover:text-foreground"
@@ -41,7 +41,7 @@ export default function Sidebar() {
             >
               <i className={`fas ${item.icon} w-5`}></i>
               <span>{item.label}</span>
-            </a>
+            </div>
           </Link>
         ))}
       </nav>
