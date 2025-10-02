@@ -28,6 +28,7 @@
   "nav": {
     "dashboard": "لوحة التحكم",
     "employees": "الموظفون",
+    "templates": "القوالب",
     "logs": "رفع السجلات",
     "reports": "التقارير",
     "activity": "سجلات النشاط",

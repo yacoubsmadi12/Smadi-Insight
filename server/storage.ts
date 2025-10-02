@@ -1,4 +1,4 @@
-import { users, employees, logs, reports, type User, type InsertUser, type Employee, type InsertEmployee, type Log, type InsertLog, type Report, type InsertReport } from "@shared/schema";
+import { users, employees, logs, reports, templates, type User, type InsertUser, type Employee, type InsertEmployee, type Log, type InsertLog, type Report, type InsertReport, type Template, type InsertTemplate } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, like, or } from "drizzle-orm";
 
@@ -14,6 +14,7 @@ export interface IStorage {
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: string, employee: Partial<InsertEmployee>): Promise<Employee>;
   deleteEmployee(id: string): Promise<void>;
+  createEmployees(employees: InsertEmployee[]): Promise<Employee[]>;
 
   // Log methods
   getLog(id: string): Promise<Log | undefined>;
@@ -25,6 +26,13 @@ export interface IStorage {
   getReport(id: string): Promise<Report | undefined>;
   getReports(filters?: { employeeId?: string; reportType?: string; startDate?: Date; endDate?: Date }): Promise<Report[]>;
   createReport(report: InsertReport): Promise<Report>;
+
+  // Template methods
+  getTemplate(id: string): Promise<Template | undefined>;
+  getTemplates(): Promise<Template[]>;
+  createTemplate(template: InsertTemplate): Promise<Template>;
+  updateTemplate(id: string, template: Partial<InsertTemplate>): Promise<Template>;
+  deleteTemplate(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -177,6 +185,44 @@ export class DatabaseStorage implements IStorage {
   async createReport(insertReport: InsertReport): Promise<Report> {
     const result = await db.insert(reports).values(insertReport as any).returning();
     return result[0];
+  }
+
+  // Employee bulk create
+  async createEmployees(insertEmployees: InsertEmployee[]): Promise<Employee[]> {
+    const BATCH_SIZE = 100;
+    const allCreatedEmployees: Employee[] = [];
+
+    for (let i = 0; i < insertEmployees.length; i += BATCH_SIZE) {
+      const batch = insertEmployees.slice(i, i + BATCH_SIZE);
+      const createdBatch = await db.insert(employees).values(batch).returning();
+      allCreatedEmployees.push(...createdBatch);
+    }
+
+    return allCreatedEmployees;
+  }
+
+  // Template methods
+  async getTemplate(id: string): Promise<Template | undefined> {
+    const [template] = await db.select().from(templates).where(eq(templates.id, id));
+    return template || undefined;
+  }
+
+  async getTemplates(): Promise<Template[]> {
+    return db.select().from(templates).orderBy(desc(templates.createdAt));
+  }
+
+  async createTemplate(insertTemplate: InsertTemplate): Promise<Template> {
+    const [template] = await db.insert(templates).values(insertTemplate as any).returning();
+    return template;
+  }
+
+  async updateTemplate(id: string, updateData: Partial<InsertTemplate>): Promise<Template> {
+    const [template] = await db.update(templates).set(updateData as any).where(eq(templates.id, id)).returning();
+    return template;
+  }
+
+  async deleteTemplate(id: string): Promise<void> {
+    await db.delete(templates).where(eq(templates.id, id));
   }
 }
 

@@ -1,19 +1,23 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useRef } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { apiCall } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import EmployeeDialog from "@/components/EmployeeDialog";
 import { type Employee } from "@shared/schema";
-import { Edit } from "lucide-react";
+import { Edit, Upload } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function EmployeesPage() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const { data: employees } = useQuery({
     queryKey: ["/api/employees", search],
@@ -22,6 +26,56 @@ export default function EmployeesPage() {
       return res.json();
     },
   });
+
+  const uploadMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await apiCall("/api/employees/upload", {
+        method: "POST",
+        body: formData,
+      });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Success",
+        description: data.message || `Uploaded ${data.count} employees`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const allowedExtensions = [".xlsx", ".xls", ".csv", ".txt"];
+      const fileExtension = "." + file.name.split(".").pop()?.toLowerCase();
+      
+      if (!allowedExtensions.includes(fileExtension)) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an Excel (.xlsx, .xls), CSV, or TXT file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      uploadMutation.mutate(file);
+    }
+    
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,16 +88,35 @@ export default function EmployeesPage() {
               <h2 className="text-2xl font-bold text-foreground">Employees</h2>
               <p className="text-sm text-muted-foreground">Manage your team members</p>
             </div>
-            <Button
-              onClick={() => {
-                setSelectedEmployee(undefined);
-                setDialogOpen(true);
-              }}
-              data-testid="button-add-employee"
-            >
-              <i className="fas fa-plus mr-2"></i>
-              Add Employee
-            </Button>
+            <div className="flex gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,.csv,.txt"
+                onChange={handleFileUpload}
+                className="hidden"
+                data-testid="input-file-upload"
+              />
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadMutation.isPending}
+                data-testid="button-upload-employees"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {uploadMutation.isPending ? "Uploading..." : "Upload File"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setSelectedEmployee(undefined);
+                  setDialogOpen(true);
+                }}
+                data-testid="button-add-employee"
+              >
+                <i className="fas fa-plus mr-2"></i>
+                Add Employee
+              </Button>
+            </div>
           </div>
 
           <div className="bg-card border border-border rounded-lg p-4">

@@ -2,11 +2,12 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import multer from "multer";
+import * as XLSX from "xlsx";
 import { storage } from "./storage";
 import { hashPassword, comparePassword, generateAccessToken, generateRefreshToken, verifyRefreshToken, authenticateToken } from "./auth";
 import { parseCSV, parseJSON, validateLogEntry } from "./services/logs";
 import { generateEmployeeReport } from "./services/gemini";
-import { insertEmployeeSchema, insertLogSchema } from "@shared/schema";
+import { insertEmployeeSchema, insertLogSchema, insertTemplateSchema } from "@shared/schema";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
@@ -411,6 +412,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logsProcessed: logs.length,
         reportsGenerated: reports.length,
         activeEmployees: employees.filter(e => e.status === "active").length,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Template routes
+  app.get("/api/templates", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const templates = await storage.getTemplates();
+      res.json(templates);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/templates/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const template = await storage.getTemplate(req.params.id);
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      res.json(template);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/templates", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertTemplateSchema.parse(req.body);
+      const template = await storage.createTemplate(validatedData);
+      res.status(201).json(template);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/templates/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const updateSchema = insertTemplateSchema.partial();
+      const validatedData = updateSchema.parse(req.body);
+      const template = await storage.updateTemplate(req.params.id, validatedData);
+      res.json(template);
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/templates/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteTemplate(req.params.id);
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Bulk employee upload endpoint
+  app.post("/api/employees/upload", authenticateToken, upload.single("file"), async (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const fileExtension = req.file.originalname.split(".").pop()?.toLowerCase();
+      let employeesData: any[] = [];
+
+      if (fileExtension === "xlsx" || fileExtension === "xls") {
+        const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        employeesData = XLSX.utils.sheet_to_json(worksheet);
+      } else if (fileExtension === "csv") {
+        const fileContent = req.file.buffer.toString("utf-8");
+        const lines = fileContent.trim().split("\n");
+        const headers = lines[0].split(",").map(h => h.trim());
+        
+        employeesData = lines.slice(1).map(line => {
+          const values = line.split(",").map(v => v.trim());
+          const obj: any = {};
+          headers.forEach((header, index) => {
+            obj[header] = values[index];
+          });
+          return obj;
+        });
+      } else if (fileExtension === "txt") {
+        const fileContent = req.file.buffer.toString("utf-8");
+        const lines = fileContent.trim().split("\n");
+        const headers = lines[0].split("\t").map(h => h.trim());
+        
+        employeesData = lines.slice(1).map(line => {
+          const values = line.split("\t").map(v => v.trim());
+          const obj: any = {};
+          headers.forEach((header, index) => {
+            obj[header] = values[index];
+          });
+          return obj;
+        });
+      } else {
+        return res.status(400).json({ message: "Unsupported file format. Use Excel (.xlsx, .xls), CSV, or TXT." });
+      }
+
+      const validEmployees = employeesData.map(emp => ({
+        name: emp.name || emp.Name || "",
+        email: emp.email || emp.Email || "",
+        role: emp.role || emp.Role || "Employee",
+        department: emp.department || emp.Department || "General",
+        jobDescription: emp.jobDescription || emp["Job Description"] || "",
+        rules: emp.rules || emp.Rules || "",
+        status: emp.status || emp.Status || "active",
+      })).filter(emp => emp.name && emp.email);
+
+      if (validEmployees.length === 0) {
+        return res.status(400).json({ message: "No valid employee entries found in file" });
+      }
+
+      const createdEmployees = await storage.createEmployees(validEmployees);
+      
+      res.status(201).json({
+        message: `Successfully uploaded ${createdEmployees.length} employees`,
+        count: createdEmployees.length,
+        employees: createdEmployees,
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });

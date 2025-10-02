@@ -8,6 +8,7 @@ export default function Sidebar() {
   const navItems = [
     { path: "/dashboard", icon: "fa-chart-line", label: t("nav.dashboard") },
     { path: "/employees", icon: "fa-users", label: t("nav.employees") },
+    { path: "/templates", icon: "fa-file-contract", label: t("nav.templates") },
     { path: "/logs", icon: "fa-file-upload", label: t("nav.logs") },
     { path: "/reports", icon: "fa-file-alt", label: t("nav.reports") },
     { path: "/activity", icon: "fa-history", label: t("nav.activity") },
