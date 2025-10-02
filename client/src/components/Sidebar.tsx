@@ -11,6 +11,7 @@ export default function Sidebar() {
     { path: "/logs", icon: "fa-file-upload", label: t("nav.logs") },
     { path: "/reports", icon: "fa-file-alt", label: t("nav.reports") },
     { path: "/activity", icon: "fa-history", label: t("nav.activity") },
+    { path: "/integration", icon: "fa-plug", label: t("nav.integration") },
     { path: "/settings", icon: "fa-cog", label: t("nav.settings") },
   ];
 

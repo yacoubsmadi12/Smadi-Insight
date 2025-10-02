@@ -14,6 +14,7 @@ import EmployeeDetailPage from "@/pages/employee-detail";
 import LogsPage from "@/pages/logs";
 import ReportsPage from "@/pages/reports";
 import ActivityLogsPage from "@/pages/activity-logs";
+import IntegrationPage from "@/pages/integration";
 import SettingsPage from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
@@ -50,6 +51,11 @@ function Router() {
       <Route path="/activity">
         <ProtectedRoute>
           <ActivityLogsPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/integration">
+        <ProtectedRoute>
+          <IntegrationPage />
         </ProtectedRoute>
       </Route>
       <Route path="/settings">
