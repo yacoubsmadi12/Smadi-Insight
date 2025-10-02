@@ -1,0 +1,60 @@
+You are a senior full-stack engineer. 
+Update my project **Smadi Insight** to support not only manual file upload (CSV/JSON) but also **real-time log ingestion (integration)**.
+
+Requirements:
+
+1. **Frontend (React/Next.js)**
+   - Keep the existing "Upload Logs" page.
+   - Add a new tab/section called **Integration** in the Dashboard.
+   - In this tab, show:
+     - Example API endpoint: `POST /api/logs`
+     - Example JSON body for devices/agents:
+       {
+         "employeeId": "123",
+         "timestamp": "2025-10-02T08:55:00Z",
+         "source": "firewall01",
+         "action": "login_failed",
+         "details": "Invalid password from 192.168.1.5"
+       }
+     - Instructions for developers (how to send logs).
+   - Add a real-time log table that auto-updates using WebSockets.
+
+2. **Backend (Express/Node.js)**
+   - Create a new REST API endpoint: `POST /api/logs`
+     - Accept JSON logs with fields (employeeId, timestamp, source, action, details).
+     - Validate incoming data, return `200 OK` if valid.
+   - Store logs into the existing PostgreSQL database.
+   - Add a WebSocket server:
+     - When a new log is received, broadcast it in real time to all connected dashboards.
+
+3. **Database (PostgreSQL)**
+   - Extend the schema with a `logs` table:
+     - id (auto increment)
+     - employeeId (string, nullable)
+     - timestamp (datetime, required)
+     - source (string, required)
+     - action (string, required)
+     - details (text, optional)
+
+4. **Integration Instructions**
+   - On the Integration tab, display a code snippet for Python/Node.js agent to push logs.
+   - Example Python agent:
+     ```python
+     import requests, json, datetime
+     url = "https://yourdomain/api/logs"
+     log = {
+       "employeeId": "123",
+       "timestamp": datetime.datetime.utcnow().isoformat(),
+       "source": "server01",
+       "action": "cpu_high",
+       "details": "CPU usage exceeded 90%"
+     }
+     requests.post(url, json=log)
+     ```
+
+5. **Result**
+   - Users can still upload logs manually (CSV/JSON).
+   - OR integrate their devices/servers to send logs directly in real time.
+   - Dashboard shows live logs instantly via WebSockets.
+
+Make sure the system works 100% and runs on Replit with no build errors.
