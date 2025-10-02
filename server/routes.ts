@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import multer from "multer";
 import { storage } from "./storage";
 import { hashPassword, comparePassword, generateAccessToken, generateRefreshToken, verifyRefreshToken, authenticateToken } from "./auth";
@@ -8,6 +9,18 @@ import { generateEmployeeReport } from "./services/gemini";
 import { insertEmployeeSchema, insertLogSchema } from "@shared/schema";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+
+let wss: WebSocketServer;
+
+export function broadcastLog(log: any) {
+  if (wss) {
+    wss.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(JSON.stringify({ type: 'new_log', data: log }));
+      }
+    });
+  }
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -221,6 +234,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/logs", async (req: Request, res: Response) => {
+    try {
+      const logData = insertLogSchema.parse(req.body);
+      
+      const employee = await storage.getEmployee(logData.employeeId);
+      if (!employee) {
+        await db.execute(sql`
+          INSERT INTO employees (id, name, email, role, department, status)
+          VALUES (${logData.employeeId}, ${logData.employeeId}, ${logData.employeeId + '@integration.local'}, 'Integration User', 'System', 'active')
+          ON CONFLICT (id) DO NOTHING
+        `);
+      }
+
+      const createdLog = await storage.createLog(logData);
+      
+      broadcastLog(createdLog);
+      
+      res.status(200).json({ 
+        message: "Log received successfully",
+        log: createdLog 
+      });
+    } catch (error: any) {
+      res.status(400).json({ message: error.message });
+    }
+  });
+
   app.post("/api/logs/upload", authenticateToken, upload.single("file"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
@@ -379,5 +418,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
+  
   return httpServer;
 }
