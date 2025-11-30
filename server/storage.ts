@@ -82,6 +82,8 @@ export interface IStorage {
   // NMS Log methods
   getNmsLog(id: string): Promise<NmsLog | undefined>;
   getNmsLogs(filters?: { nmsSystemId?: string; operatorId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; limit?: number }): Promise<NmsLog[]>;
+  getNmsLogsPaginated(filters: { nmsSystemId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; level?: string; search?: string }, offset: number, limit: number): Promise<NmsLog[]>;
+  getNmsLogsCount(filters: { nmsSystemId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; level?: string; search?: string }): Promise<number>;
   createNmsLog(log: InsertNmsLog): Promise<NmsLog>;
   createNmsLogs(logs: InsertNmsLog[]): Promise<NmsLog[]>;
   getNmsLogStats(nmsSystemId: string): Promise<{ total: number; successful: number; failed: number }>;
@@ -499,6 +501,61 @@ export class DatabaseStorage implements IStorage {
       return query.orderBy(desc(nmsLogs.timestamp)).limit(filters.limit);
     }
     return query.orderBy(desc(nmsLogs.timestamp));
+  }
+
+  private buildNmsLogConditions(filters: { nmsSystemId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; level?: string; search?: string }) {
+    const conditions = [];
+    if (filters.nmsSystemId) {
+      conditions.push(eq(nmsLogs.nmsSystemId, filters.nmsSystemId));
+    }
+    if (filters.operatorUsername) {
+      conditions.push(like(nmsLogs.operatorUsername, `%${filters.operatorUsername}%`));
+    }
+    if (filters.startDate) {
+      conditions.push(gte(nmsLogs.timestamp, filters.startDate));
+    }
+    if (filters.endDate) {
+      conditions.push(lte(nmsLogs.timestamp, filters.endDate));
+    }
+    if (filters.result) {
+      conditions.push(like(nmsLogs.result, `%${filters.result}%`));
+    }
+    if (filters.level) {
+      conditions.push(eq(nmsLogs.level, filters.level));
+    }
+    if (filters.search) {
+      conditions.push(
+        or(
+          like(nmsLogs.operation, `%${filters.search}%`),
+          like(nmsLogs.operationObject, `%${filters.search}%`),
+          like(nmsLogs.details, `%${filters.search}%`)
+        )!
+      );
+    }
+    return conditions;
+  }
+
+  async getNmsLogsPaginated(filters: { nmsSystemId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; level?: string; search?: string }, offset: number, limit: number): Promise<NmsLog[]> {
+    const conditions = this.buildNmsLogConditions(filters);
+    
+    let query = db.select().from(nmsLogs);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)!) as any;
+    }
+    
+    return query.orderBy(desc(nmsLogs.timestamp)).offset(offset).limit(limit);
+  }
+
+  async getNmsLogsCount(filters: { nmsSystemId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; level?: string; search?: string }): Promise<number> {
+    const conditions = this.buildNmsLogConditions(filters);
+    
+    let query = db.select({ count: count() }).from(nmsLogs);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)!) as any;
+    }
+    
+    const result = await query;
+    return Number(result[0]?.count || 0);
   }
 
   async createNmsLog(insertLog: InsertNmsLog): Promise<NmsLog> {

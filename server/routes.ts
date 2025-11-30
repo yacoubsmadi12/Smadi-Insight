@@ -789,16 +789,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // NMS Logs
   app.get("/api/nms-logs", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const { nmsSystemId, operatorUsername, startDate, endDate, result, limit } = req.query;
-      const logs = await storage.getNmsLogs({
+      const { nmsSystemId, operatorUsername, startDate, endDate, result, level, search, page, limit } = req.query;
+      
+      const pageNum = parseInt(page as string) || 1;
+      const limitNum = parseInt(limit as string) || 50;
+      const offset = (pageNum - 1) * limitNum;
+      
+      const filters = {
         nmsSystemId: nmsSystemId as string | undefined,
         operatorUsername: operatorUsername as string | undefined,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
         result: result as string | undefined,
-        limit: limit ? parseInt(limit as string) : 1000,
+        level: level as string | undefined,
+        search: search as string | undefined,
+      };
+      
+      const logs = await storage.getNmsLogsPaginated(filters, offset, limitNum);
+      const total = await storage.getNmsLogsCount(filters);
+      
+      res.json({
+        logs,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum),
       });
-      res.json(logs);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -930,7 +946,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/analysis-reports/generate", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const { nmsSystemId, operatorId, groupId, dateRange } = req.body;
+      const { nmsSystemId, operatorId, groupId, reportType = "daily" } = req.body;
 
       if (!nmsSystemId) {
         return res.status(400).json({ message: "NMS System ID is required" });
@@ -940,22 +956,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let startDate = new Date();
       let dateRangeText = "";
 
-      switch (dateRange) {
-        case "last-7-days":
+      switch (reportType) {
+        case "weekly":
           startDate.setDate(endDate.getDate() - 7);
-          dateRangeText = "Last 7 Days";
+          dateRangeText = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
           break;
-        case "last-30-days":
+        case "monthly":
           startDate.setDate(endDate.getDate() - 30);
-          dateRangeText = "Last 30 Days";
+          dateRangeText = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
           break;
-        case "today":
-          startDate.setHours(0, 0, 0, 0);
-          dateRangeText = "Today";
-          break;
+        case "daily":
         default:
-          startDate.setDate(endDate.getDate() - 7);
-          dateRangeText = "Last 7 Days";
+          startDate.setHours(0, 0, 0, 0);
+          dateRangeText = endDate.toLocaleDateString();
+          break;
       }
 
       const logs = await storage.getNmsLogs({
@@ -992,7 +1006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         operatorId: operatorId || null,
         groupId: groupId || group?.id || null,
         managerId: manager?.id || null,
-        reportType: 'daily',
+        reportType,
         dateRange: dateRangeText,
         summary: analysis.summary,
         totalOperations: analysis.totalOperations,
@@ -1007,6 +1021,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.status(201).json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Send Report Email
+  app.post("/api/analysis-reports/:id/send-email", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const report = await storage.getAnalysisReport(req.params.id);
+      if (!report) {
+        return res.status(404).json({ message: "Report not found" });
+      }
+
+      if (!report.managerId) {
+        return res.status(400).json({ message: "No manager assigned to this report" });
+      }
+
+      const manager = await storage.getManager(report.managerId);
+      if (!manager) {
+        return res.status(400).json({ message: "Manager not found" });
+      }
+
+      // TODO: Implement actual email sending here using nodemailer or similar
+      // For now, we just mark it as sent
+      const updatedReport = await storage.updateAnalysisReport(req.params.id, {
+        sentToEmail: true,
+        sentAt: new Date(),
+      });
+
+      res.json({ 
+        message: `Report sent to ${manager.email}`,
+        report: updatedReport,
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

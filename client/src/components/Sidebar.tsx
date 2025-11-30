@@ -8,6 +8,8 @@ export default function Sidebar() {
   const navItems = [
     { path: "/dashboard", icon: "fa-chart-line", label: t("nav.dashboard") },
     { path: "/nms-systems", icon: "fa-server", label: "NMS Systems" },
+    { path: "/nms-logs", icon: "fa-list-alt", label: "NMS Logs" },
+    { path: "/analysis-reports", icon: "fa-chart-bar", label: "Analysis Reports" },
     { path: "/employees", icon: "fa-users", label: t("nav.employees") },
     { path: "/templates", icon: "fa-file-contract", label: t("nav.templates") },
     { path: "/logs", icon: "fa-file-upload", label: t("nav.logs") },
