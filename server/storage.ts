@@ -1,6 +1,7 @@
 import { users, employees, logs, reports, templates, type User, type InsertUser, type Employee, type InsertEmployee, type Log, type InsertLog, type Report, type InsertReport, type Template, type InsertTemplate } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, like, or } from "drizzle-orm";
+import { eq, desc, and, gte, lte, like, or, sql } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 
 export interface IStorage {
   // User methods
@@ -38,24 +39,26 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0] || undefined;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return result[0] || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    const id = uuidv4();
+    await db.insert(users).values({ ...insertUser, id });
+    const result = await db.select().from(users).where(eq(users.id, id));
+    return result[0];
   }
 
   // Employee methods
   async getEmployee(id: string): Promise<Employee | undefined> {
-    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
-    return employee || undefined;
+    const result = await db.select().from(employees).where(eq(employees.id, id));
+    return result[0] || undefined;
   }
 
   async getEmployees(filters?: { search?: string; role?: string; department?: string; status?: string }): Promise<Employee[]> {
@@ -88,13 +91,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
-    const [employee] = await db.insert(employees).values(insertEmployee).returning();
-    return employee;
+    const id = uuidv4();
+    await db.insert(employees).values({ ...insertEmployee, id } as any);
+    const result = await db.select().from(employees).where(eq(employees.id, id));
+    return result[0];
   }
 
   async updateEmployee(id: string, updateData: Partial<InsertEmployee>): Promise<Employee> {
-    const [employee] = await db.update(employees).set(updateData).where(eq(employees.id, id)).returning();
-    return employee;
+    await db.update(employees).set(updateData).where(eq(employees.id, id));
+    const result = await db.select().from(employees).where(eq(employees.id, id));
+    return result[0];
   }
 
   async deleteEmployee(id: string): Promise<void> {
@@ -103,8 +109,8 @@ export class DatabaseStorage implements IStorage {
 
   // Log methods
   async getLog(id: string): Promise<Log | undefined> {
-    const [log] = await db.select().from(logs).where(eq(logs.id, id));
-    return log || undefined;
+    const result = await db.select().from(logs).where(eq(logs.id, id));
+    return result[0] || undefined;
   }
 
   async getLogs(filters?: { employeeId?: string; source?: string; action?: string; startDate?: Date; endDate?: Date }): Promise<Log[]> {
@@ -135,8 +141,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLog(insertLog: InsertLog): Promise<Log> {
-    const [log] = await db.insert(logs).values(insertLog).returning();
-    return log;
+    const id = uuidv4();
+    await db.insert(logs).values({ ...insertLog, id } as any);
+    const result = await db.select().from(logs).where(eq(logs.id, id));
+    return result[0];
   }
 
   async createLogs(insertLogs: InsertLog[]): Promise<Log[]> {
@@ -145,8 +153,13 @@ export class DatabaseStorage implements IStorage {
 
     for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
       const batch = insertLogs.slice(i, i + BATCH_SIZE);
-      const createdBatch = await db.insert(logs).values(batch).returning();
-      allCreatedLogs.push(...createdBatch);
+      const batchWithIds = batch.map(log => ({ ...log, id: uuidv4() }));
+      await db.insert(logs).values(batchWithIds as any);
+      
+      for (const log of batchWithIds) {
+        const result = await db.select().from(logs).where(eq(logs.id, log.id));
+        if (result[0]) allCreatedLogs.push(result[0]);
+      }
     }
 
     return allCreatedLogs;
@@ -154,8 +167,8 @@ export class DatabaseStorage implements IStorage {
 
   // Report methods
   async getReport(id: string): Promise<Report | undefined> {
-    const [report] = await db.select().from(reports).where(eq(reports.id, id));
-    return report || undefined;
+    const result = await db.select().from(reports).where(eq(reports.id, id));
+    return result[0] || undefined;
   }
 
   async getReports(filters?: { employeeId?: string; reportType?: string; startDate?: Date; endDate?: Date }): Promise<Report[]> {
@@ -183,7 +196,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createReport(insertReport: InsertReport): Promise<Report> {
-    const result = await db.insert(reports).values(insertReport as any).returning();
+    const id = uuidv4();
+    await db.insert(reports).values({ ...insertReport, id } as any);
+    const result = await db.select().from(reports).where(eq(reports.id, id));
     return result[0];
   }
 
@@ -194,8 +209,13 @@ export class DatabaseStorage implements IStorage {
 
     for (let i = 0; i < insertEmployees.length; i += BATCH_SIZE) {
       const batch = insertEmployees.slice(i, i + BATCH_SIZE);
-      const createdBatch = await db.insert(employees).values(batch).returning();
-      allCreatedEmployees.push(...createdBatch);
+      const batchWithIds = batch.map(emp => ({ ...emp, id: uuidv4() }));
+      await db.insert(employees).values(batchWithIds as any);
+      
+      for (const emp of batchWithIds) {
+        const result = await db.select().from(employees).where(eq(employees.id, emp.id));
+        if (result[0]) allCreatedEmployees.push(result[0]);
+      }
     }
 
     return allCreatedEmployees;
@@ -203,8 +223,8 @@ export class DatabaseStorage implements IStorage {
 
   // Template methods
   async getTemplate(id: string): Promise<Template | undefined> {
-    const [template] = await db.select().from(templates).where(eq(templates.id, id));
-    return template || undefined;
+    const result = await db.select().from(templates).where(eq(templates.id, id));
+    return result[0] || undefined;
   }
 
   async getTemplates(): Promise<Template[]> {
@@ -212,13 +232,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createTemplate(insertTemplate: InsertTemplate): Promise<Template> {
-    const [template] = await db.insert(templates).values(insertTemplate as any).returning();
-    return template;
+    const id = uuidv4();
+    await db.insert(templates).values({ ...insertTemplate, id } as any);
+    const result = await db.select().from(templates).where(eq(templates.id, id));
+    return result[0];
   }
 
   async updateTemplate(id: string, updateData: Partial<InsertTemplate>): Promise<Template> {
-    const [template] = await db.update(templates).set(updateData as any).where(eq(templates.id, id)).returning();
-    return template;
+    await db.update(templates).set(updateData as any).where(eq(templates.id, id));
+    const result = await db.select().from(templates).where(eq(templates.id, id));
+    return result[0];
   }
 
   async deleteTemplate(id: string): Promise<void> {
