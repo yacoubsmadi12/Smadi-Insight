@@ -1,0 +1,72 @@
+
+ NMSMMLServer               |   995
+ MmlService                 |   560
+ OSSFaceService             |   385
+ Device Panel Operations    |   314
+ NBIMgmtService             |   212
+ Fars Service               |   199
+ NE License Management      |   194
+ VNFM                       |   192
+ CMEFaceService             |   147
+ Data Collection            |   126
+ Topology Management        |    88
+ ScriptModuleService        |    79
+ OSSFileService             |    41
+ CMEngine                   |    26
+ Alarm Management           |    23
+ CMEServer                  |    18
+ Integrated Task Management |    15
+ CMEUniFSService            |    14
+ Log Management             |     6
+ syslog-user                |     5
+ MMLWebsite                 |     2
+ Software Management        |     2
+ Operation Logs             |     1
+ SnmpAgentService           |     1
+(24 rows)
+ Restart Trace Task                                                                  |     6
+ Query logs                                                                          |     6
+ Export Base Station Bulk Configuration Data                                         |     5
+ Export Trace Task                                                                   |     5
+ query report list                                                                   |     5
+ Save Topology View                                                                  |     5
+ Configuration Report Query                                                          |     4
+ Query report results by condition (report type).                                    |     4
+ Query and filter report results based on conditions (report type) for page display. |     4
+ Custom sorting                                                                      |     4
+ Checking Whether the Report Query Result Exceeds the Page Display Limit.            |     4
+ Check the information of configuration report.                                      |     4
+ Export Co-MPT BTS Bulk Configuration Data                                           |     4
+ Export data                                                                         |     4
+ Opening the Planned Area                                                            |     3
+ isTiso                                                                              |     3
+ Informational                                                                       |     3
+ Delete the corresponding temporary table based on the table name (opId).            |     3
+ Obtain NE Backup License File                                                       |     3
+ get Planned area neCapacity                                                         |     3
+ List the user group                                                                 |     3
+ Restore NE license file                                                             |     3
+ async create Planned area                                                           |     2
+ Critical                                                                            |     2
+ Creating the Planned Area                                                           |     2
+ operate planned area                                                                |     2
+ MML Report                                                                          |     2
+ Download NE backup file                                                             |     2
+ Deleting the Planned Area                                                           |     2
+ Export current alarms                                                               |     2
+ Rule Check                                                                          |     1
+ Export LTE Radio Network Planning Data                                              |     1
+ Alarm Check                                                                         |     1
+ Save MML History                                                                    |     1
+ Send Manual Task Execution Command                                                  |     1
+ Export all logs                                                                     |     1
+ Query alarm monitoring task version                                                 |     1
+ Move Node                                                                           |     1
+ open planned area                                                                   |     1
+ Synchronize alarm                                                                   |     1
+ The User Change the BS's License                                                    |     1
+ Distribute BS License                                                               |     1
+ Export eNodeB Bulk Configuration Data                                               |     1
+ Trace Server Query Subscribe Info Uniform Interface                                 |     1
+ Trace Server Shake Hand Uniform Interface                                           |     1
+(85 rows)
