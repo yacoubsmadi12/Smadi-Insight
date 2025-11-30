@@ -1,6 +1,18 @@
-import { users, employees, logs, reports, templates, type User, type InsertUser, type Employee, type InsertEmployee, type Log, type InsertLog, type Report, type InsertReport, type Template, type InsertTemplate } from "@shared/schema";
+import { 
+  users, employees, logs, reports, templates, 
+  nmsSystems, managers, operatorGroups, operators, nmsLogs, analysisReports,
+  type User, type InsertUser, type Employee, type InsertEmployee, 
+  type Log, type InsertLog, type Report, type InsertReport, 
+  type Template, type InsertTemplate,
+  type NmsSystem, type InsertNmsSystem,
+  type Manager, type InsertManager,
+  type OperatorGroup, type InsertOperatorGroup,
+  type Operator, type InsertOperator,
+  type NmsLog, type InsertNmsLog,
+  type AnalysisReport, type InsertAnalysisReport
+} from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gte, lte, like, or, sql } from "drizzle-orm";
+import { eq, desc, and, gte, lte, like, or, sql, count } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 export interface IStorage {
@@ -36,6 +48,50 @@ export interface IStorage {
   createTemplate(template: InsertTemplate): Promise<Template>;
   updateTemplate(id: string, template: Partial<InsertTemplate>): Promise<Template>;
   deleteTemplate(id: string): Promise<void>;
+
+  // NMS System methods
+  getNmsSystem(id: string): Promise<NmsSystem | undefined>;
+  getNmsSystemByName(name: string): Promise<NmsSystem | undefined>;
+  getNmsSystems(): Promise<NmsSystem[]>;
+  createNmsSystem(system: InsertNmsSystem): Promise<NmsSystem>;
+  updateNmsSystem(id: string, system: Partial<InsertNmsSystem>): Promise<NmsSystem>;
+  deleteNmsSystem(id: string): Promise<void>;
+
+  // Manager methods
+  getManager(id: string): Promise<Manager | undefined>;
+  getManagers(nmsSystemId?: string): Promise<Manager[]>;
+  createManager(manager: InsertManager): Promise<Manager>;
+  updateManager(id: string, manager: Partial<InsertManager>): Promise<Manager>;
+  deleteManager(id: string): Promise<void>;
+
+  // Operator Group methods
+  getOperatorGroup(id: string): Promise<OperatorGroup | undefined>;
+  getOperatorGroups(filters?: { nmsSystemId?: string; managerId?: string }): Promise<OperatorGroup[]>;
+  createOperatorGroup(group: InsertOperatorGroup): Promise<OperatorGroup>;
+  updateOperatorGroup(id: string, group: Partial<InsertOperatorGroup>): Promise<OperatorGroup>;
+  deleteOperatorGroup(id: string): Promise<void>;
+
+  // Operator methods
+  getOperator(id: string): Promise<Operator | undefined>;
+  getOperatorByUsername(username: string, nmsSystemId: string): Promise<Operator | undefined>;
+  getOperators(filters?: { nmsSystemId?: string; groupId?: string }): Promise<Operator[]>;
+  createOperator(operator: InsertOperator): Promise<Operator>;
+  updateOperator(id: string, operator: Partial<InsertOperator>): Promise<Operator>;
+  deleteOperator(id: string): Promise<void>;
+
+  // NMS Log methods
+  getNmsLog(id: string): Promise<NmsLog | undefined>;
+  getNmsLogs(filters?: { nmsSystemId?: string; operatorId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; limit?: number }): Promise<NmsLog[]>;
+  createNmsLog(log: InsertNmsLog): Promise<NmsLog>;
+  createNmsLogs(logs: InsertNmsLog[]): Promise<NmsLog[]>;
+  getNmsLogStats(nmsSystemId: string): Promise<{ total: number; successful: number; failed: number }>;
+  deleteOldNmsLogs(nmsSystemId: string, olderThanDays: number): Promise<number>;
+
+  // Analysis Report methods
+  getAnalysisReport(id: string): Promise<AnalysisReport | undefined>;
+  getAnalysisReports(filters?: { nmsSystemId?: string; operatorId?: string; groupId?: string; managerId?: string }): Promise<AnalysisReport[]>;
+  createAnalysisReport(report: InsertAnalysisReport): Promise<AnalysisReport>;
+  updateAnalysisReport(id: string, report: Partial<InsertAnalysisReport>): Promise<AnalysisReport>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -260,6 +316,279 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTemplate(id: string): Promise<void> {
     await db.delete(templates).where(eq(templates.id, id));
+  }
+
+  // NMS System methods
+  async getNmsSystem(id: string): Promise<NmsSystem | undefined> {
+    const result = await db.select().from(nmsSystems).where(eq(nmsSystems.id, id));
+    return result[0] || undefined;
+  }
+
+  async getNmsSystemByName(name: string): Promise<NmsSystem | undefined> {
+    const result = await db.select().from(nmsSystems).where(eq(nmsSystems.name, name));
+    return result[0] || undefined;
+  }
+
+  async getNmsSystems(): Promise<NmsSystem[]> {
+    return db.select().from(nmsSystems).orderBy(desc(nmsSystems.createdAt));
+  }
+
+  async createNmsSystem(insertSystem: InsertNmsSystem): Promise<NmsSystem> {
+    const id = uuidv4();
+    await db.insert(nmsSystems).values({ ...insertSystem, id } as any);
+    const result = await db.select().from(nmsSystems).where(eq(nmsSystems.id, id));
+    return result[0];
+  }
+
+  async updateNmsSystem(id: string, updateData: Partial<InsertNmsSystem>): Promise<NmsSystem> {
+    await db.update(nmsSystems).set(updateData as any).where(eq(nmsSystems.id, id));
+    const result = await db.select().from(nmsSystems).where(eq(nmsSystems.id, id));
+    return result[0];
+  }
+
+  async deleteNmsSystem(id: string): Promise<void> {
+    await db.delete(nmsSystems).where(eq(nmsSystems.id, id));
+  }
+
+  // Manager methods
+  async getManager(id: string): Promise<Manager | undefined> {
+    const result = await db.select().from(managers).where(eq(managers.id, id));
+    return result[0] || undefined;
+  }
+
+  async getManagers(nmsSystemId?: string): Promise<Manager[]> {
+    if (nmsSystemId) {
+      return db.select().from(managers).where(eq(managers.nmsSystemId, nmsSystemId)).orderBy(desc(managers.createdAt));
+    }
+    return db.select().from(managers).orderBy(desc(managers.createdAt));
+  }
+
+  async createManager(insertManager: InsertManager): Promise<Manager> {
+    const id = uuidv4();
+    await db.insert(managers).values({ ...insertManager, id } as any);
+    const result = await db.select().from(managers).where(eq(managers.id, id));
+    return result[0];
+  }
+
+  async updateManager(id: string, updateData: Partial<InsertManager>): Promise<Manager> {
+    await db.update(managers).set(updateData as any).where(eq(managers.id, id));
+    const result = await db.select().from(managers).where(eq(managers.id, id));
+    return result[0];
+  }
+
+  async deleteManager(id: string): Promise<void> {
+    await db.delete(managers).where(eq(managers.id, id));
+  }
+
+  // Operator Group methods
+  async getOperatorGroup(id: string): Promise<OperatorGroup | undefined> {
+    const result = await db.select().from(operatorGroups).where(eq(operatorGroups.id, id));
+    return result[0] || undefined;
+  }
+
+  async getOperatorGroups(filters?: { nmsSystemId?: string; managerId?: string }): Promise<OperatorGroup[]> {
+    const conditions = [];
+    if (filters?.nmsSystemId) {
+      conditions.push(eq(operatorGroups.nmsSystemId, filters.nmsSystemId));
+    }
+    if (filters?.managerId) {
+      conditions.push(eq(operatorGroups.managerId, filters.managerId));
+    }
+
+    if (conditions.length > 0) {
+      return db.select().from(operatorGroups).where(and(...conditions)!).orderBy(desc(operatorGroups.createdAt));
+    }
+    return db.select().from(operatorGroups).orderBy(desc(operatorGroups.createdAt));
+  }
+
+  async createOperatorGroup(insertGroup: InsertOperatorGroup): Promise<OperatorGroup> {
+    const id = uuidv4();
+    await db.insert(operatorGroups).values({ ...insertGroup, id } as any);
+    const result = await db.select().from(operatorGroups).where(eq(operatorGroups.id, id));
+    return result[0];
+  }
+
+  async updateOperatorGroup(id: string, updateData: Partial<InsertOperatorGroup>): Promise<OperatorGroup> {
+    await db.update(operatorGroups).set(updateData as any).where(eq(operatorGroups.id, id));
+    const result = await db.select().from(operatorGroups).where(eq(operatorGroups.id, id));
+    return result[0];
+  }
+
+  async deleteOperatorGroup(id: string): Promise<void> {
+    await db.delete(operatorGroups).where(eq(operatorGroups.id, id));
+  }
+
+  // Operator methods
+  async getOperator(id: string): Promise<Operator | undefined> {
+    const result = await db.select().from(operators).where(eq(operators.id, id));
+    return result[0] || undefined;
+  }
+
+  async getOperatorByUsername(username: string, nmsSystemId: string): Promise<Operator | undefined> {
+    const result = await db.select().from(operators).where(
+      and(eq(operators.username, username), eq(operators.nmsSystemId, nmsSystemId))
+    );
+    return result[0] || undefined;
+  }
+
+  async getOperators(filters?: { nmsSystemId?: string; groupId?: string }): Promise<Operator[]> {
+    const conditions = [];
+    if (filters?.nmsSystemId) {
+      conditions.push(eq(operators.nmsSystemId, filters.nmsSystemId));
+    }
+    if (filters?.groupId) {
+      conditions.push(eq(operators.groupId, filters.groupId));
+    }
+
+    if (conditions.length > 0) {
+      return db.select().from(operators).where(and(...conditions)!).orderBy(desc(operators.createdAt));
+    }
+    return db.select().from(operators).orderBy(desc(operators.createdAt));
+  }
+
+  async createOperator(insertOperator: InsertOperator): Promise<Operator> {
+    const id = uuidv4();
+    await db.insert(operators).values({ ...insertOperator, id } as any);
+    const result = await db.select().from(operators).where(eq(operators.id, id));
+    return result[0];
+  }
+
+  async updateOperator(id: string, updateData: Partial<InsertOperator>): Promise<Operator> {
+    await db.update(operators).set(updateData as any).where(eq(operators.id, id));
+    const result = await db.select().from(operators).where(eq(operators.id, id));
+    return result[0];
+  }
+
+  async deleteOperator(id: string): Promise<void> {
+    await db.delete(operators).where(eq(operators.id, id));
+  }
+
+  // NMS Log methods
+  async getNmsLog(id: string): Promise<NmsLog | undefined> {
+    const result = await db.select().from(nmsLogs).where(eq(nmsLogs.id, id));
+    return result[0] || undefined;
+  }
+
+  async getNmsLogs(filters?: { nmsSystemId?: string; operatorId?: string; operatorUsername?: string; startDate?: Date; endDate?: Date; result?: string; limit?: number }): Promise<NmsLog[]> {
+    const conditions = [];
+    if (filters?.nmsSystemId) {
+      conditions.push(eq(nmsLogs.nmsSystemId, filters.nmsSystemId));
+    }
+    if (filters?.operatorId) {
+      conditions.push(eq(nmsLogs.operatorId, filters.operatorId));
+    }
+    if (filters?.operatorUsername) {
+      conditions.push(eq(nmsLogs.operatorUsername, filters.operatorUsername));
+    }
+    if (filters?.startDate) {
+      conditions.push(gte(nmsLogs.timestamp, filters.startDate));
+    }
+    if (filters?.endDate) {
+      conditions.push(lte(nmsLogs.timestamp, filters.endDate));
+    }
+    if (filters?.result) {
+      conditions.push(eq(nmsLogs.result, filters.result));
+    }
+
+    let query = db.select().from(nmsLogs);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)!) as any;
+    }
+
+    if (filters?.limit) {
+      return query.orderBy(desc(nmsLogs.timestamp)).limit(filters.limit);
+    }
+    return query.orderBy(desc(nmsLogs.timestamp));
+  }
+
+  async createNmsLog(insertLog: InsertNmsLog): Promise<NmsLog> {
+    const id = uuidv4();
+    await db.insert(nmsLogs).values({ ...insertLog, id } as any);
+    const result = await db.select().from(nmsLogs).where(eq(nmsLogs.id, id));
+    return result[0];
+  }
+
+  async createNmsLogs(insertLogs: InsertNmsLog[]): Promise<NmsLog[]> {
+    const BATCH_SIZE = 500;
+    const allCreatedLogs: NmsLog[] = [];
+
+    for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
+      const batch = insertLogs.slice(i, i + BATCH_SIZE);
+      const batchWithIds = batch.map(log => ({ ...log, id: uuidv4() }));
+      await db.insert(nmsLogs).values(batchWithIds as any);
+      allCreatedLogs.push(...batchWithIds.map(l => ({ ...l } as NmsLog)));
+    }
+
+    return allCreatedLogs;
+  }
+
+  async getNmsLogStats(nmsSystemId: string): Promise<{ total: number; successful: number; failed: number }> {
+    const allLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.nmsSystemId, nmsSystemId));
+    const successLogs = await db.select({ count: count() }).from(nmsLogs).where(
+      and(eq(nmsLogs.nmsSystemId, nmsSystemId), eq(nmsLogs.result, "Successful"))
+    );
+    const failedLogs = await db.select({ count: count() }).from(nmsLogs).where(
+      and(eq(nmsLogs.nmsSystemId, nmsSystemId), eq(nmsLogs.result, "Failed"))
+    );
+
+    return {
+      total: Number(allLogs[0]?.count || 0),
+      successful: Number(successLogs[0]?.count || 0),
+      failed: Number(failedLogs[0]?.count || 0),
+    };
+  }
+
+  async deleteOldNmsLogs(nmsSystemId: string, olderThanDays: number): Promise<number> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
+    
+    const result = await db.delete(nmsLogs).where(
+      and(
+        eq(nmsLogs.nmsSystemId, nmsSystemId),
+        lte(nmsLogs.createdAt, cutoffDate)
+      )
+    );
+    return 0; // Drizzle doesn't return count for delete
+  }
+
+  // Analysis Report methods
+  async getAnalysisReport(id: string): Promise<AnalysisReport | undefined> {
+    const result = await db.select().from(analysisReports).where(eq(analysisReports.id, id));
+    return result[0] || undefined;
+  }
+
+  async getAnalysisReports(filters?: { nmsSystemId?: string; operatorId?: string; groupId?: string; managerId?: string }): Promise<AnalysisReport[]> {
+    const conditions = [];
+    if (filters?.nmsSystemId) {
+      conditions.push(eq(analysisReports.nmsSystemId, filters.nmsSystemId));
+    }
+    if (filters?.operatorId) {
+      conditions.push(eq(analysisReports.operatorId, filters.operatorId));
+    }
+    if (filters?.groupId) {
+      conditions.push(eq(analysisReports.groupId, filters.groupId));
+    }
+    if (filters?.managerId) {
+      conditions.push(eq(analysisReports.managerId, filters.managerId));
+    }
+
+    if (conditions.length > 0) {
+      return db.select().from(analysisReports).where(and(...conditions)!).orderBy(desc(analysisReports.createdAt));
+    }
+    return db.select().from(analysisReports).orderBy(desc(analysisReports.createdAt));
+  }
+
+  async createAnalysisReport(insertReport: InsertAnalysisReport): Promise<AnalysisReport> {
+    const id = uuidv4();
+    await db.insert(analysisReports).values({ ...insertReport, id } as any);
+    const result = await db.select().from(analysisReports).where(eq(analysisReports.id, id));
+    return result[0];
+  }
+
+  async updateAnalysisReport(id: string, updateData: Partial<InsertAnalysisReport>): Promise<AnalysisReport> {
+    await db.update(analysisReports).set(updateData as any).where(eq(analysisReports.id, id));
+    const result = await db.select().from(analysisReports).where(eq(analysisReports.id, id));
+    return result[0];
   }
 }
 
