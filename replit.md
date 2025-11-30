@@ -105,6 +105,8 @@ npm run db:push
 - ✅ Eagle-themed design with custom SVG eagle icon component
 - ✅ Glassmorphism card design with subtle glow effects
 - ✅ Background eagle silhouettes with slow pulse animation
-- ✅ Redesigned login and registration pages
+- ✅ Redesigned login page (registration removed)
 - ✅ Updated translations for both English and Arabic
 - ✅ New tagline: "Eyes That Never Sleep" (عيون لا تنام)
+- ✅ Single admin login: username "admin", password "admin"
+- ✅ Database connected for storing API data and file uploads
