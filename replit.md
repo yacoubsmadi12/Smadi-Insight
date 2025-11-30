@@ -1,7 +1,7 @@
-# Smadi Insight - Employee Management System
+# Tracer Logs Zain - Employee Management System
 
 ## Overview
-A full-stack employee management and monitoring system with AI-powered reporting capabilities. The application provides employee tracking, activity logging, and automated performance reports using Google's Gemini AI.
+A full-stack employee management and monitoring system with AI-powered reporting capabilities. The application provides employee tracking, activity logging, and automated performance reports using Google's Gemini AI. The application features a dark, eagle-themed design with amber/gold accent colors representing vigilant observation ("Eyes That Never Sleep").
 
 ## Tech Stack
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS + shadcn/ui
@@ -98,3 +98,13 @@ npm run db:push
 - ✅ Frontend loads correctly with login page
 - ✅ Vite dev server configured with allowedHosts for Replit proxy
 - ✅ Server binds to 0.0.0.0:5000 for external access
+
+## UI Redesign (November 30, 2025)
+- ✅ Rebranded from "Smadi Insight" to "Tracer Logs Zain"
+- ✅ New dark/black color scheme with amber/gold and cyan accent colors
+- ✅ Eagle-themed design with custom SVG eagle icon component
+- ✅ Glassmorphism card design with subtle glow effects
+- ✅ Background eagle silhouettes with slow pulse animation
+- ✅ Redesigned login and registration pages
+- ✅ Updated translations for both English and Arabic
+- ✅ New tagline: "Eyes That Never Sleep" (عيون لا تنام)
