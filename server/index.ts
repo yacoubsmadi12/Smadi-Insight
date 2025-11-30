@@ -2,6 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { startSyslogServer } from "./syslog";
+import { storage } from "./storage";
+import { hashPassword } from "./auth";
 
 const app = express();
 
@@ -47,7 +49,29 @@ app.use((req, res, next) => {
   next();
 });
 
+// Create default admin user if it doesn't exist
+async function seedDefaultAdmin() {
+  try {
+    const existingAdmin = await storage.getUserByName("admin");
+    if (!existingAdmin) {
+      const hashedPassword = await hashPassword("admin123");
+      await storage.createUser({
+        email: "admin@admin.com",
+        password: hashedPassword,
+        name: "admin",
+        role: "admin",
+      });
+      log("Default admin user created (username: admin, password: admin123)");
+    }
+  } catch (error) {
+    console.error("Failed to create default admin user:", error);
+  }
+}
+
 (async () => {
+  // Seed default admin user
+  await seedDefaultAdmin();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
