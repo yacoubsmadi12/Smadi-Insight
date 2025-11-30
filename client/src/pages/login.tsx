@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const { t, language, setLanguage } = useLanguage();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +23,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(username, password);
       navigate("/dashboard");
     } catch (error: any) {
       toast({
@@ -64,18 +64,18 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-muted-foreground">
-                {t("auth.email")}
+              <Label htmlFor="username" className="text-muted-foreground">
+                {t("auth.username")}
               </Label>
               <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="admin"
                 required
                 className="bg-muted/50 border-border/50 focus:border-primary transition-colors"
-                data-testid="input-email"
+                data-testid="input-username"
               />
             </div>
 
@@ -105,26 +105,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input 
-                  type="checkbox" 
-                  className="w-4 h-4 rounded border-border bg-muted/50 text-primary focus:ring-primary focus:ring-offset-0"
-                  data-testid="checkbox-remember"
-                />
-                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                  {t("auth.rememberMe")}
-                </span>
-              </label>
-              <a 
-                href="#" 
-                className="text-sm text-primary hover:text-primary/80 transition-colors"
-                data-testid="link-forgot-password"
-              >
-                {t("auth.forgotPassword")}
-              </a>
-            </div>
-
             <Button 
               type="submit" 
               className="w-full font-semibold" 
@@ -141,17 +121,6 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            {t("auth.noAccount")}{" "}
-            <a 
-              href="/register" 
-              className="text-primary hover:text-primary/80 font-medium transition-colors"
-              data-testid="link-signup"
-            >
-              {t("auth.signUp")}
-            </a>
-          </div>
 
           <div className="mt-6 pt-6 border-t border-border/50">
             <button

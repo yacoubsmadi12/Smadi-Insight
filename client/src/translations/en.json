@@ -17,13 +17,9 @@
   "auth": {
     "login": "Sign In",
     "logout": "Logout",
-    "register": "Register",
-    "email": "Email",
+    "username": "Username",
     "password": "Password",
-    "rememberMe": "Remember me",
-    "forgotPassword": "Forgot password?",
-    "noAccount": "Don't have an account?",
-    "signUp": "Sign up"
+    "rememberMe": "Remember me"
   },
   "nav": {
     "dashboard": "Dashboard",

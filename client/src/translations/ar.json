@@ -17,13 +17,9 @@
   "auth": {
     "login": "تسجيل الدخول",
     "logout": "تسجيل الخروج",
-    "register": "التسجيل",
-    "email": "البريد الإلكتروني",
+    "username": "اسم المستخدم",
     "password": "كلمة المرور",
-    "rememberMe": "تذكرني",
-    "forgotPassword": "نسيت كلمة المرور؟",
-    "noAccount": "ليس لديك حساب؟",
-    "signUp": "سجل الآن"
+    "rememberMe": "تذكرني"
   },
   "nav": {
     "dashboard": "لوحة التحكم",
