@@ -1,0 +1,99 @@
+
+root@ai-noc:~/Smadi-Insight# # تثبيت PostgreSQL
+sudo apt update
+sudo apt install postgresql postgresql-contrib -y
+
+# تشغيل الخدمة
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# إنشاء قاعدة بيانات
+sudo -u postgres psql -c "CREATE DATABASE tracer_logs;"
+sudo -u postgres psql -c "CREATE USER tracer WITH PASSWORD 'YourPassword123';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE tracer_logs TO tracer;"
+sudo -u postgres psql -c "ALTER DATABASE tracer_logs OWNER TO tracer;"
+
+# إنشاء ملف .env
+echo 'DATABASE_URL=postgresql://tracer:YourPassword123@localhost:5432/tracer_logs' > .env
+
+# تشغيل المشروع
+npm run db:push
+npm run dev
+Get:1 http://security.ubuntu.com/ubuntu jammy-security InRelease [129 kB]
+Hit:2 https://deb.nodesource.com/node_20.x nodistro InRelease
+Hit:3 http://zain-westamm.az.clouds.archive.ubuntu.com/ubuntu jammy InRelease
+Get:4 http://security.ubuntu.com/ubuntu jammy-security/main amd64 DEP-11 Metadata [54.6 kB]
+Hit:5 http://zain-westamm.az.clouds.archive.ubuntu.com/ubuntu jammy-updates InRelease
+Get:6 http://security.ubuntu.com/ubuntu jammy-security/restricted amd64 DEP-11 Metadata [208 B]
+Hit:7 http://zain-westamm.az.clouds.archive.ubuntu.com/ubuntu jammy-backports InRelease
+Get:8 http://security.ubuntu.com/ubuntu jammy-security/universe amd64 DEP-11 Metadata [125 kB]
+Get:9 http://security.ubuntu.com/ubuntu jammy-security/multiverse amd64 DEP-11 Metadata [208 B]
+Fetched 309 kB in 3s (115 kB/s)
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+2 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Reading package lists... Done
+Building dependency tree... Done
+Reading state information... Done
+postgresql is already the newest version (14+238).
+postgresql-contrib is already the newest version (14+238).
+0 upgraded, 0 newly installed, 0 to remove and 2 not upgraded.
+Synchronizing state of postgresql.service with SysV service script with /lib/systemd/systemd-sysv-install.
+Executing: /lib/systemd/systemd-sysv-install enable postgresql
+could not change directory to "/root/Smadi-Insight": Permission denied
+ERROR:  database "tracer_logs" already exists
+could not change directory to "/root/Smadi-Insight": Permission denied
+ERROR:  role "tracer" already exists
+could not change directory to "/root/Smadi-Insight": Permission denied
+GRANT
+could not change directory to "/root/Smadi-Insight": Permission denied
+ALTER DATABASE
+
+> rest-express@1.0.0 db:push
+> drizzle-kit push
+
+No config path provided, using default 'drizzle.config.ts'
+Reading config file '/root/Smadi-Insight/drizzle.config.ts'
+Using 'pg' driver for database querying
+[⣷] Pulling schema from database...
+error: password authentication failed for user "tracer"
+    at /root/Smadi-Insight/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Object.query (/root/Smadi-Insight/node_modules/drizzle-kit/bin.cjs:80601:26)
+    at async fromDatabase2 (/root/Smadi-Insight/node_modules/drizzle-kit/bin.cjs:19253:25) {
+  length: 102,
+  severity: 'FATAL',
+  code: '28P01',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'auth.c',
+  line: '343',
+  routine: 'auth_failed'
+}
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+/root/Smadi-Insight/server/db.ts:9
+  throw new Error(
+        ^
+
+
+Error: DATABASE_URL must be set. Did you forget to provision a database?
+    at <anonymous> (/root/Smadi-Insight/server/db.ts:9:9)
+    at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+    at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v20.19.6
+root@ai-noc:~/Smadi-Insight#
