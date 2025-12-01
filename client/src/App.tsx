@@ -10,11 +10,8 @@ import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import EmployeesPage from "@/pages/employees";
 import EmployeeDetailPage from "@/pages/employee-detail";
-import LogsPage from "@/pages/logs";
-import ReportsPage from "@/pages/reports";
 import ActivityLogsPage from "@/pages/activity-logs";
 import IntegrationPage from "@/pages/integration";
-import TemplatesPage from "@/pages/templates";
 import SettingsPage from "@/pages/settings";
 import NmsSystemsPage from "@/pages/nms-systems";
 import NmsSystemDetailPage from "@/pages/nms-system-detail";
@@ -41,16 +38,6 @@ function Router() {
           <EmployeeDetailPage />
         </ProtectedRoute>
       )} />
-      <Route path="/logs">
-        <ProtectedRoute>
-          <LogsPage />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/reports">
-        <ProtectedRoute>
-          <ReportsPage />
-        </ProtectedRoute>
-      </Route>
       <Route path="/activity">
         <ProtectedRoute>
           <ActivityLogsPage />
@@ -59,11 +46,6 @@ function Router() {
       <Route path="/integration">
         <ProtectedRoute>
           <IntegrationPage />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/templates">
-        <ProtectedRoute>
-          <TemplatesPage />
         </ProtectedRoute>
       </Route>
       <Route path="/settings">
