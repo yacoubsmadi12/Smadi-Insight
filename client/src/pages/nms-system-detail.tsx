@@ -15,7 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Plus, User, Users, UserCog, Upload, FileText, Activity, Settings, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, Plus, User, Users, UserCog, Upload, FileText, Activity, Settings, Trash2, Edit, AlertTriangle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { NmsSystem, Manager, OperatorGroup, Operator } from "@shared/schema";
 
@@ -46,6 +47,7 @@ export default function NmsSystemDetail() {
   const [activeTab, setActiveTab] = useState("overview");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeletingLogs, setIsDeletingLogs] = useState(false);
 
   const { data: system, isLoading: systemLoading } = useQuery<NmsSystem>({
     queryKey: ["/api/nms-systems", systemId],
@@ -125,6 +127,33 @@ export default function NmsSystemDetail() {
       toast({ title: "Upload Failed", description: error.message, variant: "destructive" });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDeleteAllLogs = async () => {
+    if (!systemId) return;
+    
+    setIsDeletingLogs(true);
+    try {
+      const res = await fetch(`/api/nms-systems/${systemId}/logs`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("accessToken")}` },
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message);
+
+      toast({
+        title: "Logs Deleted",
+        description: `Successfully deleted ${data.deletedCount} logs`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/nms-systems", systemId, "stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nms-logs"] });
+    } catch (error: any) {
+      toast({ title: "Delete Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsDeletingLogs(false);
     }
   };
 
@@ -223,6 +252,36 @@ export default function NmsSystemDetail() {
                 Analysis Reports
               </Link>
             </Button>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeletingLogs || !stats?.total} data-testid="button-delete-all-logs">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete All Logs ({stats?.total || 0})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    Delete All Logs
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete all {stats?.total || 0} logs for this system? 
+                    This action cannot be undone and will permanently remove all log data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteAllLogs}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {isDeletingLogs ? "Deleting..." : "Delete All Logs"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </TabsContent>
 

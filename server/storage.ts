@@ -88,6 +88,7 @@ export interface IStorage {
   createNmsLogs(logs: InsertNmsLog[]): Promise<NmsLog[]>;
   getNmsLogStats(nmsSystemId: string): Promise<{ total: number; successful: number; failed: number }>;
   deleteOldNmsLogs(nmsSystemId: string, olderThanDays: number): Promise<number>;
+  deleteAllNmsLogs(nmsSystemId: string): Promise<number>;
 
   // Analysis Report methods
   getAnalysisReport(id: string): Promise<AnalysisReport | undefined>;
@@ -606,6 +607,14 @@ export class DatabaseStorage implements IStorage {
       )
     );
     return 0; // Drizzle doesn't return count for delete
+  }
+
+  async deleteAllNmsLogs(nmsSystemId: string): Promise<number> {
+    const countResult = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.nmsSystemId, nmsSystemId));
+    const deletedCount = Number(countResult[0]?.count || 0);
+    
+    await db.delete(nmsLogs).where(eq(nmsLogs.nmsSystemId, nmsSystemId));
+    return deletedCount;
   }
 
   // Analysis Report methods

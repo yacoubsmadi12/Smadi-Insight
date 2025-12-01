@@ -621,6 +621,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all logs for a specific NMS system
+  app.delete("/api/nms-systems/:id/logs", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const deletedCount = await storage.deleteAllNmsLogs(req.params.id);
+      res.json({ message: "All logs deleted successfully", deletedCount });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Managers CRUD
   app.get("/api/managers", authenticateToken, async (req: Request, res: Response) => {
     try {
