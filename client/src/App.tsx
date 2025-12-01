@@ -16,6 +16,7 @@ import SettingsPage from "@/pages/settings";
 import NmsSystemsPage from "@/pages/nms-systems";
 import NmsSystemDetailPage from "@/pages/nms-system-detail";
 import NmsLogsPage from "@/pages/nms-logs";
+import NmsAnalysisPage from "@/pages/nms-analysis";
 import AnalysisReportsPage from "@/pages/analysis-reports";
 import NotFound from "@/pages/not-found";
 
@@ -61,6 +62,11 @@ function Router() {
       <Route path="/nms/:id">
         <ProtectedRoute>
           <NmsSystemDetailPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/nms/:id/analysis">
+        <ProtectedRoute>
+          <NmsAnalysisPage />
         </ProtectedRoute>
       </Route>
       <Route path="/nms-logs">

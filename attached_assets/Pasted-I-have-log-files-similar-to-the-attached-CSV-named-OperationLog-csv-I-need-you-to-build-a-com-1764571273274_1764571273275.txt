@@ -1,0 +1,66 @@
+I have log files similar to the attached CSV named "OperationLog*.csv".  
+I need you to build a complete and professional parsing and analytics module for my SaaS system.
+
+### 1) Input Log Format
+Each CSV contains operational records with fields like:
+- Timestamp
+- User / System Actor
+- Action Type
+- Status (Success / Failed / Warning)
+- Description / Message
+- Module Name
+- Affected Object (ID / Name)
+- Duration (if available)
+
+### 2) Parsing Requirements
+Build a robust parser that:
+- Automatically detects field names even if they change order
+- Cleans malformed rows
+- Handles missing data gracefully
+- Normalizes timestamps to unified format (UTC)
+- Categorizes actions (Create, Update, Delete, Login, Error, Warning…)
+- Detects anomalies (too many errors, repeated actions, spikes)
+- Supports incremental parsing for daily logs
+
+### 3) Analytics Requirements
+Generate structured insights:
+- Total actions per day / per module / per user
+- Success vs failure rates
+- Top recurring errors
+- Activity heatmap by hour
+- Trend detection (increasing errors, unusual behaviors)
+- Performance metrics (avg duration per action)
+- Identify suspicious patterns (retries, rapid sequences)
+
+### 4) Manager-Ready Report Output
+Produce a JSON + HTML summary including:
+- Executive Summary
+- Key KPIs
+- Tables & charts data structure
+- Notable incidents
+- Recommendations
+- Full statistical breakdown
+
+### 5) Code Requirements
+- Implement the parser in Python
+- Use pandas for data handling
+- Use modular clean code
+- Export:
+  - Parsed structured dataset (Parquet + JSON)
+  - Analytics results (JSON)
+  - HTML template-ready report
+
+### 6) Integrations
+The module must:
+- Expose a function like `parse_operation_logs(file_path)`
+- Expose a function `generate_manager_report(parsed_data)`
+- Be fully integratable with my SaaS backend (FastAPI)
+
+### 7) Final Task
+Generate:
+1. The full parsing code
+2. The analytics engine code
+3. Report-generation code
+4. A final example showing how to call it
+
+Make everything production-level and scalable.

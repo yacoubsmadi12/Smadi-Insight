@@ -9,6 +9,7 @@ import { parseCSV, parseJSON, validateLogEntry } from "./services/logs";
 import { generateEmployeeReport } from "./services/gemini";
 import { parseHuaweiNmsLogs } from "./services/huaweiParser";
 import { analyzeOperatorLogs } from "./services/analysisEngine";
+import { analyzeNmsLogs, generateHtmlReport } from "./services/logAnalytics";
 import { 
   insertEmployeeSchema, insertLogSchema, insertTemplateSchema,
   insertNmsSystemSchema, insertManagerSchema, insertOperatorGroupSchema,
@@ -1031,6 +1032,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.status(201).json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Comprehensive Log Analysis Endpoint
+  app.post("/api/nms-systems/:id/analyze", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { startDate, endDate, format = 'json' } = req.body;
+
+      const system = await storage.getNmsSystem(id);
+      if (!system) {
+        return res.status(404).json({ message: "NMS System not found" });
+      }
+
+      const queryStartDate = startDate ? new Date(startDate) : undefined;
+      const queryEndDate = endDate ? new Date(endDate) : undefined;
+
+      const logs = await storage.getNmsLogs({
+        nmsSystemId: id,
+        startDate: queryStartDate,
+        endDate: queryEndDate,
+      });
+
+      if (logs.length === 0) {
+        return res.status(400).json({ message: "No logs found for analysis" });
+      }
+
+      const operators = await storage.getOperators({ nmsSystemId: id });
+      const groups = await storage.getOperatorGroups({ nmsSystemId: id });
+      const managers = await storage.getManagers(id);
+
+      const analysis = analyzeNmsLogs(logs, operators, groups, managers);
+
+      if (format === 'html') {
+        const htmlReport = generateHtmlReport(analysis);
+        res.setHeader('Content-Type', 'text/html');
+        res.setHeader('Content-Disposition', `attachment; filename="analysis-report-${id}.html"`);
+        return res.send(htmlReport);
+      }
+
+      res.json(analysis);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Get Analysis Summary for NMS System
+  app.get("/api/nms-systems/:id/analysis-summary", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const system = await storage.getNmsSystem(id);
+      if (!system) {
+        return res.status(404).json({ message: "NMS System not found" });
+      }
+
+      const logs = await storage.getNmsLogs({ nmsSystemId: id });
+      
+      if (logs.length === 0) {
+        return res.json({
+          hasData: false,
+          message: "No logs available for analysis",
+        });
+      }
+
+      const operators = await storage.getOperators({ nmsSystemId: id });
+      const groups = await storage.getOperatorGroups({ nmsSystemId: id });
+      const managers = await storage.getManagers(id);
+
+      const analysis = analyzeNmsLogs(logs, operators, groups, managers);
+
+      res.json({
+        hasData: true,
+        overview: analysis.overview,
+        performanceMetrics: analysis.performanceMetrics,
+        anomaliesCount: analysis.anomalies.length,
+        criticalAnomalies: analysis.anomalies.filter(a => a.severity === 'CRITICAL').length,
+        recommendations: analysis.recommendations,
+        executiveSummary: analysis.executiveSummary,
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
