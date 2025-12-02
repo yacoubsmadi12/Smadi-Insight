@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { mysqlTable, text, varchar, timestamp, int, boolean } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const users = mysqlTable("users", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   email: text("email").notNull(),
   password: text("password").notNull(),
   name: text("name").notNull(),
@@ -13,8 +13,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const employees = pgTable("employees", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const employees = mysqlTable("employees", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   name: text("name").notNull(),
   email: text("email").notNull(),
   role: text("role").notNull(),
@@ -25,8 +25,8 @@ export const employees = pgTable("employees", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const logs = pgTable("logs", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const logs = mysqlTable("logs", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   employeeId: varchar("employee_id", { length: 36 }).notNull(),
   timestamp: timestamp("timestamp").notNull(),
   source: text("source").notNull(),
@@ -35,8 +35,8 @@ export const logs = pgTable("logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const reports = pgTable("reports", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const reports = mysqlTable("reports", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   employeeId: varchar("employee_id", { length: 36 }).notNull(),
   reportType: text("report_type").notNull().default("performance"),
   dateRange: text("date_range").notNull(),
@@ -49,8 +49,8 @@ export const reports = pgTable("reports", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const templates = pgTable("templates", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const templates = mysqlTable("templates", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   name: text("name").notNull(),
   role: text("role").notNull(),
   jobDescription: text("job_description"),
@@ -59,21 +59,21 @@ export const templates = pgTable("templates", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const nmsSystems = pgTable("nms_systems", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const nmsSystems = mysqlTable("nms_systems", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   name: text("name").notNull(),
   description: text("description"),
   ipAddress: text("ip_address"),
-  port: integer("port").default(514),
+  port: int("port").default(514),
   systemType: text("system_type").notNull().default("huawei_nms"),
   connectionType: text("connection_type").notNull().default("upload"),
   status: text("status").notNull().default("active"),
-  retentionDays: integer("retention_days").notNull().default(30),
+  retentionDays: int("retention_days").notNull().default(30),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const managers = pgTable("managers", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const managers = mysqlTable("managers", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   name: text("name").notNull(),
   email: text("email").notNull(),
   phone: text("phone"),
@@ -83,8 +83,8 @@ export const managers = pgTable("managers", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const operatorGroups = pgTable("operator_groups", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const operatorGroups = mysqlTable("operator_groups", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   name: text("name").notNull(),
   managerId: varchar("manager_id", { length: 36 }),
   nmsSystemId: varchar("nms_system_id", { length: 36 }),
@@ -96,8 +96,8 @@ export const operatorGroups = pgTable("operator_groups", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const operators = pgTable("operators", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const operators = mysqlTable("operators", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   username: text("username").notNull(),
   fullName: text("full_name"),
   email: text("email"),
@@ -107,8 +107,8 @@ export const operators = pgTable("operators", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const nmsLogs = pgTable("nms_logs", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const nmsLogs = mysqlTable("nms_logs", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   nmsSystemId: varchar("nms_system_id", { length: 36 }).notNull(),
   operatorId: varchar("operator_id", { length: 36 }),
   operatorUsername: text("operator_username").notNull(),
@@ -125,8 +125,8 @@ export const nmsLogs = pgTable("nms_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const analysisReports = pgTable("analysis_reports", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+export const analysisReports = mysqlTable("analysis_reports", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
   nmsSystemId: varchar("nms_system_id", { length: 36 }).notNull(),
   operatorId: varchar("operator_id", { length: 36 }),
   groupId: varchar("group_id", { length: 36 }),
@@ -134,13 +134,13 @@ export const analysisReports = pgTable("analysis_reports", {
   reportType: text("report_type").notNull().default("daily"),
   dateRange: text("date_range").notNull(),
   summary: text("summary").notNull(),
-  totalOperations: integer("total_operations").default(0),
-  successfulOperations: integer("successful_operations").default(0),
-  failedOperations: integer("failed_operations").default(0),
+  totalOperations: int("total_operations").default(0),
+  successfulOperations: int("successful_operations").default(0),
+  failedOperations: int("failed_operations").default(0),
   violations: text("violations"),
   risks: text("risks"),
   recommendations: text("recommendations"),
-  complianceScore: integer("compliance_score"),
+  complianceScore: int("compliance_score"),
   sentToEmail: boolean("sent_to_email").default(false),
   sentAt: timestamp("sent_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

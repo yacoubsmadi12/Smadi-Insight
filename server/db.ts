@@ -1,5 +1,5 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import mysql from "mysql2/promise";
+import { drizzle } from "drizzle-orm/mysql2";
 import * as schema from "@shared/schema";
 
 if (!process.env.DATABASE_URL) {
@@ -8,6 +8,7 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const sql = neon(process.env.DATABASE_URL);
+const poolConnection = mysql.createPool(process.env.DATABASE_URL);
 
-export const db = drizzle(sql, { schema });
+export const pool = poolConnection;
+export const db = drizzle({ client: poolConnection, schema, mode: "default" });
