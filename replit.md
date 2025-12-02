@@ -125,6 +125,26 @@ npm run db:push
 - **Username:** admin
 - **Password:** admin123
 
+## MySQL Compatibility Fix (December 2, 2025)
+- ✅ Added timestamp format helper for MySQL compatibility
+- ✅ Updated Huawei log parser to filter non-timestamp strings (PORT=, HOLDTIME=, etc.)
+- ✅ MySQL now accepts timestamps in YYYY-MM-DD HH:MM:SS format
+- ✅ PostgreSQL continues to work with native Date objects
+
+### For Ubuntu/MySQL Server Users:
+To use MySQL instead of PostgreSQL, set the environment variable:
+```bash
+export DB_DIALECT=mysql
+```
+
+Or configure your db.ts file for MySQL:
+```typescript
+import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
+const pool = mysql.createPool(process.env.DATABASE_URL!);
+export const db = drizzle(pool, { schema });
+```
+
 ## NMS Log Monitoring Features (December 2, 2025)
 - ✅ Enhanced Dashboard with real-time KPIs and analytics
   - Operations activity chart (24-hour view)

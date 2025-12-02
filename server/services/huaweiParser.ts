@@ -91,6 +91,17 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
 
   const cleanTime = timeStr.replace(/\t/g, '').trim();
   
+  // Early filter: Skip strings that are clearly not timestamps
+  // These contain patterns like KEY=VALUE, PORT=, HOLDTIME=, etc.
+  if (/[A-Za-z]+=/.test(cleanTime) || /^[A-Za-z]+$/.test(cleanTime)) {
+    return null;
+  }
+  
+  // Skip if string is too short or doesn't contain date-like patterns
+  if (cleanTime.length < 8 || !/\d{2,4}/.test(cleanTime)) {
+    return null;
+  }
+  
   // Handle ISO 8601 format first (2025-12-01T00:15:32.000Z or 2025-12-01T00:15:32Z)
   const isoPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?Z?$/;
   const isoMatch = cleanTime.match(isoPattern);
@@ -140,19 +151,16 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
       const second = parseInt(match[6]);
 
       if (year < 1970 || year > 2100) {
-        console.warn(`Invalid year ${year} in timestamp: ${timeStr}, skipping...`);
         return null;
       }
 
       if (month < 0 || month > 11 || day < 1 || day > 31) {
-        console.warn(`Invalid month/day in timestamp: ${timeStr}, skipping...`);
         return null;
       }
 
       const date = new Date(year, month, day, hour, minute, second);
       
       if (isNaN(date.getTime())) {
-        console.warn(`Invalid date created from: ${timeStr}, skipping...`);
         return null;
       }
 
@@ -160,15 +168,17 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
     }
   }
 
+  // Try parsing as date, but be more strict
   try {
-    const date = new Date(cleanTime);
-    if (!isNaN(date.getTime())) {
-      const year = date.getFullYear();
-      if (year < 1970 || year > 2100) {
-        console.warn(`Invalid year ${year} in timestamp: ${timeStr}, skipping...`);
-        return null;
+    // Only try Date parsing if string looks like a date
+    if (/^\d{4}[-\/]\d{2}[-\/]\d{2}/.test(cleanTime) || /^\d{2}[-\/]\d{2}[-\/]\d{4}/.test(cleanTime)) {
+      const date = new Date(cleanTime);
+      if (!isNaN(date.getTime())) {
+        const year = date.getFullYear();
+        if (year >= 1970 && year <= 2100) {
+          return date;
+        }
       }
-      return date;
     }
   } catch (e) {
   }

@@ -20,6 +20,34 @@ function serializeJson(value: any): string | null {
   return JSON.stringify(value);
 }
 
+// Helper function to format timestamps for MySQL compatibility
+// MySQL expects YYYY-MM-DD HH:MM:SS format, not ISO 8601
+function formatTimestampForDb(date: Date | string | null | undefined): Date | string | null {
+  if (!date) return null;
+  
+  // Check if running on MySQL by looking at DATABASE_URL or DB_DIALECT env var
+  const isMySQL = process.env.DB_DIALECT === 'mysql' || 
+                  (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('postgres'));
+  
+  if (!isMySQL) {
+    // PostgreSQL can handle Date objects directly
+    return date instanceof Date ? date : new Date(date);
+  }
+  
+  // For MySQL, convert to YYYY-MM-DD HH:MM:SS format
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return null;
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 
 export interface IStorage {
   // User methods
@@ -582,7 +610,11 @@ export class DatabaseStorage implements IStorage {
 
   async createNmsLog(insertLog: InsertNmsLog): Promise<NmsLog> {
     const id = uuidv4();
-    await db.insert(nmsLogs).values({ ...insertLog, id } as any);
+    await db.insert(nmsLogs).values({ 
+      ...insertLog, 
+      id,
+      timestamp: formatTimestampForDb(insertLog.timestamp) as any
+    } as any);
     const result = await db.select().from(nmsLogs).where(eq(nmsLogs.id, id));
     return result[0];
   }
@@ -593,7 +625,11 @@ export class DatabaseStorage implements IStorage {
 
     for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
       const batch = insertLogs.slice(i, i + BATCH_SIZE);
-      const batchWithIds = batch.map(log => ({ ...log, id: uuidv4() }));
+      const batchWithIds = batch.map(log => ({ 
+        ...log, 
+        id: uuidv4(),
+        timestamp: formatTimestampForDb(log.timestamp) as any
+      }));
       await db.insert(nmsLogs).values(batchWithIds as any);
       allCreatedLogs.push(...batchWithIds.map(l => ({ ...l } as NmsLog)));
     }
