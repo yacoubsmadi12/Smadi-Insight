@@ -1,6 +1,7 @@
 import * as dgram from "dgram";
 import { storage } from "./storage";
 import { broadcastLog } from "./routes";
+import type { NmsSystem } from "@shared/schema";
 
 const SYSLOG_PORT = parseInt(process.env.SYSLOG_PORT || "514");
 
@@ -24,17 +25,29 @@ const severityNames = [
   "Debug"
 ];
 
+const severityLevels: Record<string, string> = {
+  "Emergency": "Critical",
+  "Alert": "Critical",
+  "Critical": "Critical",
+  "Error": "Major",
+  "Warning": "Warning",
+  "Notice": "Minor",
+  "Informational": "Minor",
+  "Debug": "Minor"
+};
+
 const facilityNames = [
   "kern", "user", "mail", "daemon", "auth", "syslog", "lpr", "news",
   "uucp", "cron", "authpriv", "ftp", "ntp", "audit", "alert", "clock",
   "local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"
 ];
 
+const ipToNmsSystemCache = new Map<string, NmsSystem | null>();
+const CACHE_TTL = 60000;
+const cacheTimestamps = new Map<string, number>();
+
 function parseSyslogMessage(msg: string): ParsedSyslog {
   const rawMessage = msg.trim();
-  
-  // RFC 3164 format: <PRI>TIMESTAMP HOSTNAME MESSAGE
-  // RFC 5424 format: <PRI>VERSION TIMESTAMP HOSTNAME APP-NAME PROCID MSGID STRUCTURED-DATA MSG
   
   let facility = 1;
   let severity = 6;
@@ -42,7 +55,6 @@ function parseSyslogMessage(msg: string): ParsedSyslog {
   let message = rawMessage;
   let timestamp = new Date();
 
-  // Parse priority value <PRI>
   const priMatch = rawMessage.match(/^<(\d{1,3})>/);
   if (priMatch) {
     const pri = parseInt(priMatch[1]);
@@ -51,14 +63,12 @@ function parseSyslogMessage(msg: string): ParsedSyslog {
     message = rawMessage.substring(priMatch[0].length);
   }
 
-  // Try to parse RFC 3164 timestamp (e.g., "Nov 30 15:30:00")
   const rfc3164Match = message.match(/^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+(.*)/i);
   if (rfc3164Match) {
     const dateStr = rfc3164Match[1];
     hostname = rfc3164Match[2];
     message = rfc3164Match[3];
     
-    // Parse the timestamp
     const now = new Date();
     const parsedDate = new Date(`${dateStr} ${now.getFullYear()}`);
     if (!isNaN(parsedDate.getTime())) {
@@ -66,7 +76,6 @@ function parseSyslogMessage(msg: string): ParsedSyslog {
     }
   }
 
-  // Try to parse RFC 5424 format
   const rfc5424Match = message.match(/^(\d)\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.*)/);
   if (rfc5424Match) {
     timestamp = new Date(rfc5424Match[2]);
@@ -91,6 +100,82 @@ function parseSyslogMessage(msg: string): ParsedSyslog {
   };
 }
 
+function parseNmsLogFromMessage(message: string, hostname: string): {
+  operatorUsername: string;
+  operation: string;
+  operationObject: string;
+  result: string;
+  terminalIp: string;
+} {
+  const usernameMatch = message.match(/(?:User|username|operator)[:\s]+(\S+)/i);
+  const operationMatch = message.match(/(?:Operation|action|command)[:\s]+([^;,]+)/i);
+  const resultMatch = message.match(/(?:Result|status)[:\s]+(Successful|Failed|Success|Failure|OK|ERROR)/i);
+  const ipMatch = message.match(/(?:IP|terminal|source)[:\s]+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
+  const objectMatch = message.match(/(?:Object|target|resource)[:\s]+([^;,\n]+)/i);
+
+  let result = "Successful";
+  if (resultMatch) {
+    const r = resultMatch[1].toLowerCase();
+    if (r === "failed" || r === "failure" || r === "error") {
+      result = "Failed";
+    }
+  }
+
+  return {
+    operatorUsername: usernameMatch ? usernameMatch[1] : hostname,
+    operation: operationMatch ? operationMatch[1].trim() : "System Event",
+    operationObject: objectMatch ? objectMatch[1].trim() : "",
+    result: result,
+    terminalIp: ipMatch ? ipMatch[1] : ""
+  };
+}
+
+async function getOrCreateNmsSystemForIp(ipAddress: string): Promise<NmsSystem | null> {
+  const now = Date.now();
+  const cacheTime = cacheTimestamps.get(ipAddress);
+  
+  if (cacheTime && now - cacheTime < CACHE_TTL) {
+    const cached = ipToNmsSystemCache.get(ipAddress);
+    if (cached !== undefined) {
+      return cached;
+    }
+  }
+
+  try {
+    let system = await storage.getNmsSystemByIp(ipAddress);
+    
+    if (!system) {
+      const systemName = `Syslog-${ipAddress}`;
+      const existingByName = await storage.getNmsSystemByName(systemName);
+      
+      if (existingByName) {
+        system = existingByName;
+      } else {
+        system = await storage.createNmsSystem({
+          name: systemName,
+          description: `Auto-created syslog receiver for ${ipAddress}`,
+          ipAddress: ipAddress,
+          port: 514,
+          systemType: "syslog-receiver",
+          connectionType: "syslog",
+          status: "active",
+          retentionDays: 30
+        });
+        console.log(`[syslog] Created new NMS System for IP: ${ipAddress}`);
+      }
+    }
+    
+    ipToNmsSystemCache.set(ipAddress, system);
+    cacheTimestamps.set(ipAddress, now);
+    return system;
+  } catch (error) {
+    console.error(`[syslog] Error getting/creating NMS system for IP ${ipAddress}:`, error);
+    ipToNmsSystemCache.set(ipAddress, null);
+    cacheTimestamps.set(ipAddress, now);
+    return null;
+  }
+}
+
 export function startSyslogServer() {
   const server = dgram.createSocket("udp4");
 
@@ -103,48 +188,80 @@ export function startSyslogServer() {
     try {
       const messageStr = msg.toString("utf8");
       const parsed = parseSyslogMessage(messageStr);
+      const sourceIp = rinfo.address;
       
-      console.log(`[syslog] Received from ${rinfo.address}:${rinfo.port} - ${parsed.hostname}: ${parsed.message.substring(0, 100)}...`);
+      console.log(`[syslog] Received from ${sourceIp}:${rinfo.port} - ${parsed.hostname}: ${parsed.message.substring(0, 100)}...`);
 
-      // Create log entry
-      const logData = {
+      const nmsSystem = await getOrCreateNmsSystemForIp(sourceIp);
+      
+      if (!nmsSystem) {
+        console.error(`[syslog] Could not get/create NMS system for IP: ${sourceIp}`);
+        return;
+      }
+
+      const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
+      const severityName = severityNames[parsed.severity] || "Unknown";
+      const level = severityLevels[severityName] || "Minor";
+
+      const nmsLogData = {
+        nmsSystemId: nmsSystem.id,
+        operatorUsername: logDetails.operatorUsername,
+        timestamp: parsed.timestamp,
+        operation: logDetails.operation,
+        level: level,
+        source: `syslog-${facilityNames[parsed.facility] || "unknown"}`,
+        terminalIp: logDetails.terminalIp || sourceIp,
+        operationObject: logDetails.operationObject,
+        result: logDetails.result,
+        details: parsed.message,
+        isViolation: level === "Critical" || level === "Major",
+        violationType: level === "Critical" ? "Security Alert" : (level === "Major" ? "Error" : null)
+      };
+
+      const createdNmsLog = await storage.createNmsLog(nmsLogData);
+      
+      broadcastLog({
+        type: "nms_log",
+        data: createdNmsLog,
+        nmsSystemId: nmsSystem.id
+      });
+
+      const legacyLogData = {
         employeeId: parsed.hostname,
         timestamp: parsed.timestamp,
         source: `syslog-${facilityNames[parsed.facility] || "unknown"}`,
-        action: severityNames[parsed.severity] || "Unknown",
+        action: severityName,
         details: parsed.message
       };
 
-      // Check if employee exists, create if not
-      const existingEmployees = await storage.getEmployees({ search: logData.employeeId });
-      const employeeExists = existingEmployees.some(e => e.id === logData.employeeId || e.name === logData.employeeId);
+      const existingEmployees = await storage.getEmployees({ search: legacyLogData.employeeId });
+      const employeeExists = existingEmployees.some(e => e.id === legacyLogData.employeeId || e.name === legacyLogData.employeeId);
       
       if (!employeeExists) {
         try {
           await storage.createEmployee({
-            name: logData.employeeId,
-            email: `${logData.employeeId}@syslog.local`,
+            name: legacyLogData.employeeId,
+            email: `${legacyLogData.employeeId}@syslog.local`,
             role: "System",
             department: "Network",
             status: "active"
           });
         } catch (e) {
-          // Employee might already exist from concurrent request
         }
       }
       
-      // Get the employee to use their ID
-      const allEmployees = await storage.getEmployees({ search: logData.employeeId });
-      const employee = allEmployees.find(e => e.name === logData.employeeId);
+      const allEmployees = await storage.getEmployees({ search: legacyLogData.employeeId });
+      const employee = allEmployees.find(e => e.name === legacyLogData.employeeId);
       if (employee) {
-        logData.employeeId = employee.id;
+        legacyLogData.employeeId = employee.id;
       }
 
-      // Store the log
-      const createdLog = await storage.createLog(logData);
+      const createdLog = await storage.createLog(legacyLogData);
       
-      // Broadcast to WebSocket clients
-      broadcastLog(createdLog);
+      broadcastLog({
+        type: "legacy_log",
+        data: createdLog
+      });
 
     } catch (error) {
       console.error("[syslog] Error processing message:", error);
@@ -159,4 +276,9 @@ export function startSyslogServer() {
   server.bind(SYSLOG_PORT, "0.0.0.0");
   
   return server;
+}
+
+export function clearNmsSystemCache() {
+  ipToNmsSystemCache.clear();
+  cacheTimestamps.clear();
 }

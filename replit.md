@@ -121,3 +121,27 @@ npm run db:push
 ## Default Login Credentials
 - **Username:** admin
 - **Password:** admin123
+
+## NMS Log Monitoring Features (December 2, 2025)
+- ✅ Enhanced Dashboard with real-time KPIs and analytics
+  - Operations activity chart (24-hour view)
+  - Success/failure pie chart distribution
+  - NMS systems status overview
+  - Top operations with success rates
+  - Recent activity log viewer
+- ✅ Syslog server (UDP port 514) auto-creates NMS systems per source IP
+- ✅ NMS Systems management with connection type badges (Manual/Syslog)
+- ✅ Analysis Reports accessible from NMS system cards
+- ✅ Database management in Settings page
+  - View database statistics (NMS data, legacy data)
+  - Clear all NMS data with confirmation dialog
+  - Clear all legacy data with confirmation dialog
+  - System information (CPU, memory, uptime)
+- ✅ Back navigation arrows for improved UX
+
+## API Endpoints
+- `GET /api/dashboard/stats` - Enhanced dashboard statistics with hourly/daily activity
+- `GET /api/admin/db-stats` - Database record counts for all tables
+- `DELETE /api/admin/clear-nms-data` - Clear all NMS-related data
+- `DELETE /api/admin/clear-legacy-data` - Clear all legacy employee data
+- `GET /api/system/info` - Server resource monitoring

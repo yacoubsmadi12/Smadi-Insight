@@ -58,7 +58,9 @@ export interface IStorage {
   // NMS System methods
   getNmsSystem(id: string): Promise<NmsSystem | undefined>;
   getNmsSystemByName(name: string): Promise<NmsSystem | undefined>;
+  getNmsSystemByIp(ipAddress: string): Promise<NmsSystem | undefined>;
   getNmsSystems(): Promise<NmsSystem[]>;
+  getNmsSystemsBySyslog(): Promise<NmsSystem[]>;
   createNmsSystem(system: InsertNmsSystem): Promise<NmsSystem>;
   updateNmsSystem(id: string, system: Partial<InsertNmsSystem>): Promise<NmsSystem>;
   deleteNmsSystem(id: string): Promise<void>;
@@ -101,6 +103,10 @@ export interface IStorage {
   getAnalysisReports(filters?: { nmsSystemId?: string; operatorId?: string; groupId?: string; managerId?: string }): Promise<AnalysisReport[]>;
   createAnalysisReport(report: InsertAnalysisReport): Promise<AnalysisReport>;
   updateAnalysisReport(id: string, report: Partial<InsertAnalysisReport>): Promise<AnalysisReport>;
+
+  // Database management methods
+  clearAllNmsData(): Promise<{ nmsLogs: number; analysisReports: number; operators: number; operatorGroups: number; managers: number; nmsSystems: number }>;
+  clearAllLegacyData(): Promise<{ logs: number; reports: number; employees: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -338,8 +344,17 @@ export class DatabaseStorage implements IStorage {
     return result[0] || undefined;
   }
 
+  async getNmsSystemByIp(ipAddress: string): Promise<NmsSystem | undefined> {
+    const result = await db.select().from(nmsSystems).where(eq(nmsSystems.ipAddress, ipAddress));
+    return result[0] || undefined;
+  }
+
   async getNmsSystems(): Promise<NmsSystem[]> {
     return db.select().from(nmsSystems).orderBy(desc(nmsSystems.createdAt));
+  }
+
+  async getNmsSystemsBySyslog(): Promise<NmsSystem[]> {
+    return db.select().from(nmsSystems).where(eq(nmsSystems.connectionType, 'syslog')).orderBy(desc(nmsSystems.createdAt));
   }
 
   async createNmsSystem(insertSystem: InsertNmsSystem): Promise<NmsSystem> {
@@ -668,6 +683,47 @@ export class DatabaseStorage implements IStorage {
     await db.update(analysisReports).set(updateData as any).where(eq(analysisReports.id, id));
     const result = await db.select().from(analysisReports).where(eq(analysisReports.id, id));
     return result[0];
+  }
+
+  async clearAllNmsData(): Promise<{ nmsLogs: number; analysisReports: number; operators: number; operatorGroups: number; managers: number; nmsSystems: number }> {
+    const nmsLogsCount = await db.select({ count: count() }).from(nmsLogs);
+    const analysisReportsCount = await db.select({ count: count() }).from(analysisReports);
+    const operatorsCount = await db.select({ count: count() }).from(operators);
+    const operatorGroupsCount = await db.select({ count: count() }).from(operatorGroups);
+    const managersCount = await db.select({ count: count() }).from(managers);
+    const nmsSystemsCount = await db.select({ count: count() }).from(nmsSystems);
+
+    await db.delete(nmsLogs);
+    await db.delete(analysisReports);
+    await db.delete(operators);
+    await db.delete(operatorGroups);
+    await db.delete(managers);
+    await db.delete(nmsSystems);
+
+    return {
+      nmsLogs: Number(nmsLogsCount[0]?.count || 0),
+      analysisReports: Number(analysisReportsCount[0]?.count || 0),
+      operators: Number(operatorsCount[0]?.count || 0),
+      operatorGroups: Number(operatorGroupsCount[0]?.count || 0),
+      managers: Number(managersCount[0]?.count || 0),
+      nmsSystems: Number(nmsSystemsCount[0]?.count || 0)
+    };
+  }
+
+  async clearAllLegacyData(): Promise<{ logs: number; reports: number; employees: number }> {
+    const logsCount = await db.select({ count: count() }).from(logs);
+    const reportsCount = await db.select({ count: count() }).from(reports);
+    const employeesCount = await db.select({ count: count() }).from(employees);
+
+    await db.delete(logs);
+    await db.delete(reports);
+    await db.delete(employees);
+
+    return {
+      logs: Number(logsCount[0]?.count || 0),
+      reports: Number(reportsCount[0]?.count || 0),
+      employees: Number(employeesCount[0]?.count || 0)
+    };
   }
 }
 

@@ -12,8 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Server, Settings, FileText, Users, AlertTriangle, Activity, Trash2, Edit } from "lucide-react";
-import { Link } from "wouter";
+import { Plus, Server, Settings, FileText, Users, AlertTriangle, Activity, Trash2, Edit, ArrowLeft, BarChart3, Network } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { NmsSystem } from "@shared/schema";
 
@@ -30,6 +30,7 @@ type NmsSystemFormData = z.infer<typeof nmsSystemSchema>;
 
 export default function NmsSystems() {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSystem, setEditingSystem] = useState<NmsSystem | null>(null);
 
@@ -118,9 +119,19 @@ export default function NmsSystems() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">NMS Systems</h1>
-          <p className="text-muted-foreground">Manage your Network Management Systems</p>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate("/dashboard")}
+            data-testid="button-back-to-dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-semibold" data-testid="text-page-title">NMS Systems</h1>
+            <p className="text-muted-foreground">Manage your Network Management Systems</p>
+          </div>
         </div>
         <Dialog open={isCreateOpen || !!editingSystem} onOpenChange={(open) => {
           if (!open) {
@@ -315,43 +326,82 @@ function SystemCard({
     },
   });
 
+  const getConnectionTypeLabel = (type: string) => {
+    switch (type) {
+      case "upload": return "Manual Upload";
+      case "syslog": return "Syslog Forwarding";
+      case "api": return "API Integration";
+      default: return type;
+    }
+  };
+
+  const getConnectionTypeBadgeVariant = (type: string) => {
+    switch (type) {
+      case "syslog": return "default";
+      case "api": return "secondary";
+      default: return "outline";
+    }
+  };
+
   return (
     <Card className="hover-elevate" data-testid={`card-system-${system.id}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Server className="w-5 h-5 text-primary" />
-            <CardTitle className="text-lg">{system.name}</CardTitle>
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Server className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">{system.name}</CardTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant={getConnectionTypeBadgeVariant(system.connectionType) as any} className="text-xs">
+                  <Network className="w-3 h-3 mr-1" />
+                  {getConnectionTypeLabel(system.connectionType)}
+                </Badge>
+              </div>
+            </div>
           </div>
           <Badge variant={system.status === "active" ? "default" : "secondary"}>
             {system.status}
           </Badge>
         </div>
-        <CardDescription className="line-clamp-2">
-          {system.description || `${system.systemType} - ${system.connectionType}`}
+        <CardDescription className="line-clamp-2 mt-2">
+          {system.description || `${system.systemType}`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <FileText className="w-4 h-4" />
-            <span>{stats?.total || 0} logs</span>
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+            <FileText className="w-4 h-4 text-primary" />
+            <div>
+              <span className="font-medium">{stats?.total || 0}</span>
+              <span className="text-muted-foreground ml-1">logs</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Users className="w-4 h-4" />
-            <span>{stats?.operatorCount || 0} operators</span>
+          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+            <Users className="w-4 h-4 text-cyan-500" />
+            <div>
+              <span className="font-medium">{stats?.operatorCount || 0}</span>
+              <span className="text-muted-foreground ml-1">operators</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Activity className="w-4 h-4" />
-            <span>{stats?.successful || 0} successful</span>
+          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+            <Activity className="w-4 h-4 text-green-500" />
+            <div>
+              <span className="font-medium">{stats?.successful || 0}</span>
+              <span className="text-muted-foreground ml-1">success</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <AlertTriangle className="w-4 h-4" />
-            <span>{stats?.failed || 0} failed</span>
+          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/50">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+            <div>
+              <span className="font-medium">{stats?.failed || 0}</span>
+              <span className="text-muted-foreground ml-1">failed</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="flex flex-wrap gap-2 pt-3 border-t">
           <Button variant="ghost" size="sm" asChild data-testid={`button-view-${system.id}`}>
             <Link href={`/nms/${system.id}`}>
               <Settings className="w-4 h-4 mr-1" />
@@ -362,6 +412,12 @@ function SystemCard({
             <Link href={`/nms/${system.id}/logs`}>
               <FileText className="w-4 h-4 mr-1" />
               Logs
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" asChild data-testid={`button-analysis-${system.id}`}>
+            <Link href={`/nms/${system.id}/analysis`}>
+              <BarChart3 className="w-4 h-4 mr-1" />
+              Analysis
             </Link>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => onEdit(system)} data-testid={`button-edit-${system.id}`}>

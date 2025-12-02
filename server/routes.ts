@@ -426,6 +426,118 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/dashboard/stats", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const employees = await storage.getEmployees({});
+      const logs = await storage.getLogs({});
+      const reports = await storage.getReports({});
+      const analysisReports = await storage.getAnalysisReports({});
+      const nmsSystems = await storage.getNmsSystems();
+      const operators = await storage.getOperators({});
+      
+      const nmsSystemStats = await Promise.all(
+        nmsSystems.map(async (system) => {
+          const systemLogs = await storage.getNmsLogs({ nmsSystemId: system.id, limit: 10000 });
+          const successfulLogs = systemLogs.filter(l => l.result === 'Successful').length;
+          const failedLogs = systemLogs.filter(l => l.result === 'Failed').length;
+          const systemOperators = operators.filter(o => o.nmsSystemId === system.id);
+          const lastLog = systemLogs.sort((a, b) => 
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          )[0];
+          
+          return {
+            id: system.id,
+            name: system.name,
+            connectionType: system.connectionType,
+            status: system.status,
+            totalLogs: systemLogs.length,
+            successfulLogs,
+            failedLogs,
+            operatorCount: systemOperators.length,
+            lastActivity: lastLog ? lastLog.timestamp : null
+          };
+        })
+      );
+      
+      const allNmsLogs = await storage.getNmsLogs({ limit: 50000 });
+      const successfulOperations = allNmsLogs.filter(l => l.result === 'Successful').length;
+      const failedOperations = allNmsLogs.filter(l => l.result === 'Failed').length;
+      const totalViolations = allNmsLogs.filter(l => l.isViolation).length;
+      
+      const hourlyActivity = Array.from({ length: 24 }, (_, hour) => {
+        const hourLogs = allNmsLogs.filter(log => {
+          const logHour = new Date(log.timestamp).getHours();
+          return logHour === hour;
+        });
+        return {
+          hour,
+          count: hourLogs.length,
+          successful: hourLogs.filter(l => l.result === 'Successful').length,
+          failed: hourLogs.filter(l => l.result === 'Failed').length
+        };
+      });
+      
+      const dailyMap = new Map<string, { count: number; successful: number; failed: number }>();
+      allNmsLogs.forEach(log => {
+        const date = new Date(log.timestamp).toISOString().split('T')[0];
+        const existing = dailyMap.get(date) || { count: 0, successful: 0, failed: 0 };
+        existing.count++;
+        if (log.result === 'Successful') existing.successful++;
+        if (log.result === 'Failed') existing.failed++;
+        dailyMap.set(date, existing);
+      });
+      
+      const dailyActivity = Array.from(dailyMap.entries())
+        .map(([date, stats]) => ({ date, ...stats }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(-30);
+      
+      const operationMap = new Map<string, { count: number; successful: number }>();
+      allNmsLogs.forEach(log => {
+        const op = log.operation.length > 50 ? log.operation.substring(0, 50) + '...' : log.operation;
+        const existing = operationMap.get(op) || { count: 0, successful: 0 };
+        existing.count++;
+        if (log.result === 'Successful') existing.successful++;
+        operationMap.set(op, existing);
+      });
+      
+      const topOperations = Array.from(operationMap.entries())
+        .map(([operation, stats]) => ({
+          operation,
+          count: stats.count,
+          successRate: stats.count > 0 ? (stats.successful / stats.count) * 100 : 0
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+      
+      const recentLogs = allNmsLogs
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 20);
+
+      res.json({
+        totalEmployees: employees.length,
+        logsProcessed: logs.length,
+        reportsGenerated: reports.length + analysisReports.length,
+        activeEmployees: employees.filter(e => e.status === "active").length,
+        totalNmsSystems: nmsSystems.length,
+        activeNmsSystems: nmsSystems.filter(s => s.status === 'active').length,
+        totalNmsLogs: allNmsLogs.length,
+        successfulOperations,
+        failedOperations,
+        totalViolations,
+        operatorCount: operators.length,
+        nmsSystems: nmsSystemStats,
+        hourlyActivity,
+        dailyActivity,
+        topOperations,
+        recentLogs
+      });
+    } catch (error: any) {
+      console.error("Dashboard stats error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Template routes
   app.get("/api/templates", authenticateToken, async (req: Request, res: Response) => {
     try {
@@ -1195,6 +1307,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ 
         message: `Cleanup completed`,
         retentionDays: system.retentionDays,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Database Management - Clear all NMS data
+  app.delete("/api/admin/clear-nms-data", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const result = await storage.clearAllNmsData();
+      res.json({ 
+        message: "All NMS data cleared successfully",
+        deleted: result
+      });
+    } catch (error: any) {
+      console.error("Clear NMS data error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Database Management - Clear all legacy data (employees, logs, reports)
+  app.delete("/api/admin/clear-legacy-data", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const result = await storage.clearAllLegacyData();
+      res.json({ 
+        message: "All legacy data cleared successfully",
+        deleted: result
+      });
+    } catch (error: any) {
+      console.error("Clear legacy data error:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Database Statistics
+  app.get("/api/admin/db-stats", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const nmsSystems = await storage.getNmsSystems();
+      const nmsLogs = await storage.getNmsLogs({ limit: 100000 });
+      const analysisReports = await storage.getAnalysisReports({});
+      const operators = await storage.getOperators({});
+      const operatorGroups = await storage.getOperatorGroups({});
+      const managers = await storage.getManagers();
+      const employees = await storage.getEmployees({});
+      const logs = await storage.getLogs({});
+      const reports = await storage.getReports({});
+
+      res.json({
+        nms: {
+          systems: nmsSystems.length,
+          logs: nmsLogs.length,
+          analysisReports: analysisReports.length,
+          operators: operators.length,
+          operatorGroups: operatorGroups.length,
+          managers: managers.length
+        },
+        legacy: {
+          employees: employees.length,
+          logs: logs.length,
+          reports: reports.length
+        }
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
