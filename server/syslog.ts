@@ -107,11 +107,11 @@ function parseNmsLogFromMessage(message: string, hostname: string): {
   result: string;
   terminalIp: string;
 } {
-  const usernameMatch = message.match(/(?:User|username|operator)[:\s]+(\S+)/i);
-  const operationMatch = message.match(/(?:Operation|action|command)[:\s]+([^;,]+)/i);
-  const resultMatch = message.match(/(?:Result|status)[:\s]+(Successful|Failed|Success|Failure|OK|ERROR)/i);
-  const ipMatch = message.match(/(?:IP|terminal|source)[:\s]+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
-  const objectMatch = message.match(/(?:Object|target|resource)[:\s]+([^;,\n]+)/i);
+  const usernameMatch = message.match(/(?:User|username|operator)[=:\s]+(\S+)/i);
+  const operationMatch = message.match(/(?:Operation|action|command)[=:\s]+([^;,]+)/i);
+  const resultMatch = message.match(/(?:Result|status)[=:\s]+(Successful|Failed|Success|Failure|OK|ERROR)/i);
+  const ipMatch = message.match(/(?:TerminalIP|IP|terminal|source)[=:\s]+(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/i);
+  const objectMatch = message.match(/(?:Object|target|resource)[=:\s]+([^;,\n]+)/i);
 
   let result = "Successful";
   if (resultMatch) {
@@ -188,18 +188,24 @@ export function startSyslogServer() {
     try {
       const messageStr = msg.toString("utf8");
       const parsed = parseSyslogMessage(messageStr);
-      const sourceIp = rinfo.address;
+      const udpSourceIp = rinfo.address;
       
-      console.log(`[syslog] Received from ${sourceIp}:${rinfo.port} - ${parsed.hostname}: ${parsed.message.substring(0, 100)}...`);
+      // Parse the log details first to get the terminal IP from the message
+      const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
+      
+      // Use terminal IP from message content if available, otherwise fall back to UDP source
+      // This allows each unique terminal IP to have its own NMS system
+      const effectiveSourceIp = logDetails.terminalIp || udpSourceIp;
+      
+      console.log(`[syslog] Received from ${udpSourceIp}:${rinfo.port} (effective IP: ${effectiveSourceIp}) - ${parsed.hostname}: ${parsed.message.substring(0, 100)}...`);
 
-      const nmsSystem = await getOrCreateNmsSystemForIp(sourceIp);
+      const nmsSystem = await getOrCreateNmsSystemForIp(effectiveSourceIp);
       
       if (!nmsSystem) {
-        console.error(`[syslog] Could not get/create NMS system for IP: ${sourceIp}`);
+        console.error(`[syslog] Could not get/create NMS system for IP: ${effectiveSourceIp}`);
         return;
       }
 
-      const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
       const severityName = severityNames[parsed.severity] || "Unknown";
       const level = severityLevels[severityName] || "Minor";
 
@@ -210,7 +216,7 @@ export function startSyslogServer() {
         operation: logDetails.operation,
         level: level,
         source: `syslog-${facilityNames[parsed.facility] || "unknown"}`,
-        terminalIp: logDetails.terminalIp || sourceIp,
+        terminalIp: effectiveSourceIp,
         operationObject: logDetails.operationObject,
         result: logDetails.result,
         details: parsed.message,
