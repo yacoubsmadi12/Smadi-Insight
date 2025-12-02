@@ -1,9 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import mysql from "mysql2/promise";
+import { drizzle } from "drizzle-orm/mysql2";
 import * as schema from "@shared/schema";
-
-neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -11,12 +8,7 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-const connectionString = process.env.DATABASE_URL;
-const poolConfig: any = { connectionString };
+const poolConnection = mysql.createPool(process.env.DATABASE_URL);
 
-if (connectionString?.includes('sslmode=require')) {
-  poolConfig.ssl = { rejectUnauthorized: false };
-}
-
-export const pool = new Pool(poolConfig);
-export const db = drizzle({ client: pool, schema });
+export const pool = poolConnection;
+export const db = drizzle({ client: poolConnection, schema, mode: "default" });
