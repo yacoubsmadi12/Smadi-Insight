@@ -117,6 +117,9 @@ npm run db:push
 - ✅ Neon serverless driver configured for PostgreSQL connection
 - ✅ All database tables recreated and admin user seeded
 - ✅ Application verified working with login functionality
+- ✅ Fixed ISO-8601 timestamp parsing in Huawei log parser (supports formats like '2025-12-01T00:15:32.000Z')
+- ✅ Added NMS system name to analysis reports (HTML/JSON) with security sanitization
+- ✅ Security: HTML escaping for XSS prevention, filename sanitization for header injection prevention
 
 ## Default Login Credentials
 - **Username:** admin
