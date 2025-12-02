@@ -20,28 +20,39 @@ function serializeJson(value: any): string | null {
   return JSON.stringify(value);
 }
 
+// Check if running on MySQL
+function isUsingMySQL(): boolean {
+  const dbUrl = process.env.DATABASE_URL || '';
+  return process.env.DB_DIALECT === 'mysql' || 
+         dbUrl.includes('mysql') ||
+         process.env.MYSQL_HOST !== undefined ||
+         process.env.MYSQL_DATABASE !== undefined ||
+         (dbUrl.length > 0 && !dbUrl.includes('postgres') && !dbUrl.includes('neon'));
+}
+
 // Helper function to format timestamps for MySQL compatibility
 // MySQL expects YYYY-MM-DD HH:MM:SS format, not ISO 8601
 function formatTimestampForDb(date: Date | string | null | undefined): Date | string | null {
   if (!date) return null;
   
-  // Check if running on MySQL by looking at multiple indicators
-  const dbUrl = process.env.DATABASE_URL || '';
-  const isMySQL = process.env.DB_DIALECT === 'mysql' || 
-                  dbUrl.includes('mysql') ||
-                  process.env.MYSQL_HOST !== undefined ||
-                  process.env.MYSQL_DATABASE !== undefined ||
-                  (dbUrl && !dbUrl.includes('postgres') && !dbUrl.includes('neon'));
-  
-  if (!isMySQL) {
-    // PostgreSQL can handle Date objects directly
-    return date instanceof Date ? date : new Date(date);
+  // Convert to Date if string
+  let d: Date;
+  if (date instanceof Date) {
+    d = date;
+  } else if (typeof date === 'string') {
+    d = new Date(date);
+  } else {
+    return null;
   }
   
-  // For MySQL, convert to YYYY-MM-DD HH:MM:SS format
-  const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d.getTime())) return null;
   
+  if (!isUsingMySQL()) {
+    // PostgreSQL can handle Date objects directly
+    return d;
+  }
+  
+  // For MySQL, convert to YYYY-MM-DD HH:MM:SS format string
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -50,6 +61,31 @@ function formatTimestampForDb(date: Date | string | null | undefined): Date | st
   const seconds = String(d.getSeconds()).padStart(2, '0');
   
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// Format timestamp for MySQL raw SQL insertion
+function formatTimestampForRawSql(date: Date | string | null | undefined): string {
+  if (!date) return 'NULL';
+  
+  let d: Date;
+  if (date instanceof Date) {
+    d = date;
+  } else if (typeof date === 'string') {
+    d = new Date(date);
+  } else {
+    return 'NULL';
+  }
+  
+  if (isNaN(d.getTime())) return 'NULL';
+  
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  
+  return `'${year}-${month}-${day} ${hours}:${minutes}:${seconds}'`;
 }
 
 
