@@ -966,6 +966,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get NMS Logs with violations only
+  app.get("/api/nms-logs/violations", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const logs = await storage.getNmsLogs({ limit: 100 });
+      const violations = logs.filter(log => log.isViolation === true);
+      res.json(violations);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Upload NMS Logs (Huawei CSV format)
   app.post("/api/nms-logs/upload", authenticateToken, upload.single("file"), async (req: Request, res: Response) => {
     try {

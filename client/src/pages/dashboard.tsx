@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiCall } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
@@ -7,6 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Server, 
   Users, 
@@ -53,6 +62,19 @@ interface NmsSystemStats {
   lastActivity: string | null;
 }
 
+interface ViolationLog {
+  id: string;
+  operatorUsername: string;
+  operation: string;
+  timestamp: string;
+  level: string;
+  result: string;
+  violationType: string | null;
+  details: string;
+  nmsSystemId: string;
+  terminalIp: string | null;
+}
+
 interface DashboardStats {
   totalEmployees: number;
   logsProcessed: number;
@@ -70,11 +92,14 @@ interface DashboardStats {
   dailyActivity: { date: string; count: number; successful: number; failed: number }[];
   topOperations: { operation: string; count: number; successRate: number }[];
   recentLogs: any[];
+  violations?: ViolationLog[];
 }
 
 const COLORS = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
+  const [showViolationsDialog, setShowViolationsDialog] = useState(false);
+
   const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
     queryFn: async () => {
@@ -82,6 +107,15 @@ export default function DashboardPage() {
       return res.json();
     },
     refetchInterval: 10000,
+  });
+
+  const { data: violationsData } = useQuery<ViolationLog[]>({
+    queryKey: ["/api/nms-logs/violations"],
+    queryFn: async () => {
+      const res = await apiCall("/api/nms-logs/violations");
+      return res.json();
+    },
+    enabled: showViolationsDialog,
   });
 
   const successRate = stats?.totalNmsLogs 
@@ -195,7 +229,11 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+            <Card 
+              className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20 cursor-pointer hover-elevate transition-all"
+              onClick={() => setShowViolationsDialog(true)}
+              data-testid="card-violations"
+            >
               <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Violations
@@ -208,7 +246,9 @@ export default function DashboardPage() {
                 <div className="text-3xl font-bold text-amber-500">
                   {stats?.totalViolations || 0}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Security alerts</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Security alerts - Click to view details
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -548,6 +588,90 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={showViolationsDialog} onOpenChange={setShowViolationsDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-amber-500" />
+              Security Violations
+            </DialogTitle>
+            <DialogDescription>
+              List of all security alerts and violations detected in the system
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-3">
+              {violationsData && violationsData.length > 0 ? (
+                violationsData.map((violation) => (
+                  <div 
+                    key={violation.id}
+                    className="p-4 rounded-lg bg-muted/50 border border-amber-500/20"
+                    data-testid={`violation-item-${violation.id}`}
+                  >
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          violation.level === 'Critical' ? 'bg-red-500/20' : 
+                          violation.level === 'Major' ? 'bg-orange-500/20' : 'bg-amber-500/20'
+                        }`}>
+                          <AlertTriangle className={`w-4 h-4 ${
+                            violation.level === 'Critical' ? 'text-red-500' : 
+                            violation.level === 'Major' ? 'text-orange-500' : 'text-amber-500'
+                          }`} />
+                        </div>
+                        <div>
+                          <p className="font-medium">{violation.operatorUsername}</p>
+                          <p className="text-sm text-muted-foreground">{violation.operation}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={violation.level === 'Critical' ? 'destructive' : 'default'}>
+                          {violation.level}
+                        </Badge>
+                        {violation.violationType && (
+                          <Badge variant="outline" className="border-amber-500/50 text-amber-500">
+                            {violation.violationType}
+                          </Badge>
+                        )}
+                        <Badge variant={violation.result === 'Successful' ? 'secondary' : 'destructive'}>
+                          {violation.result}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {new Date(violation.timestamp).toLocaleString()}
+                        </div>
+                        {violation.terminalIp && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Network className="w-3 h-3" />
+                            {violation.terminalIp}
+                          </div>
+                        )}
+                      </div>
+                      {violation.details && (
+                        <p className="mt-2 text-xs text-muted-foreground bg-background/50 p-2 rounded font-mono overflow-x-auto">
+                          {violation.details.substring(0, 300)}
+                          {violation.details.length > 300 && '...'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Shield className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium">No Violations Found</p>
+                  <p className="text-sm">The system is operating normally with no security alerts</p>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
