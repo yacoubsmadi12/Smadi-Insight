@@ -63,9 +63,18 @@ function formatTimestampForDb(date: Date | string | null | undefined): Date | st
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
-// Format timestamp for MySQL raw SQL insertion
-function formatTimestampForRawSql(date: Date | string | null | undefined): string {
-  if (!date) return 'NULL';
+// Format timestamp for MySQL raw SQL insertion (returns string without quotes)
+function formatMySQLTimestamp(date: Date | string | null | undefined): string {
+  if (!date) {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
   
   let d: Date;
   if (date instanceof Date) {
@@ -73,10 +82,12 @@ function formatTimestampForRawSql(date: Date | string | null | undefined): strin
   } else if (typeof date === 'string') {
     d = new Date(date);
   } else {
-    return 'NULL';
+    d = new Date();
   }
   
-  if (isNaN(d.getTime())) return 'NULL';
+  if (isNaN(d.getTime())) {
+    d = new Date();
+  }
   
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -85,7 +96,7 @@ function formatTimestampForRawSql(date: Date | string | null | undefined): strin
   const minutes = String(d.getMinutes()).padStart(2, '0');
   const seconds = String(d.getSeconds()).padStart(2, '0');
   
-  return `'${year}-${month}-${day} ${hours}:${minutes}:${seconds}'`;
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 
@@ -650,11 +661,24 @@ export class DatabaseStorage implements IStorage {
 
   async createNmsLog(insertLog: InsertNmsLog): Promise<NmsLog> {
     const id = uuidv4();
-    await db.insert(nmsLogs).values({ 
-      ...insertLog, 
-      id,
-      timestamp: formatTimestampForDb(insertLog.timestamp) as any
-    } as any);
+    
+    if (isUsingMySQL()) {
+      // For MySQL: Use raw SQL to avoid Drizzle's toISOString() call
+      const ts = formatMySQLTimestamp(insertLog.timestamp);
+      const now = formatMySQLTimestamp(new Date());
+      await db.execute(sql`
+        INSERT INTO nms_logs (id, nms_system_id, operator_id, operator_username, timestamp, operation, operation_object, result, level, source, terminal_ip, details, is_violation, created_at)
+        VALUES (${id}, ${insertLog.nmsSystemId}, ${insertLog.operatorId || null}, ${insertLog.operatorUsername}, ${sql.raw(`'${ts}'`)}, ${insertLog.operation}, ${insertLog.operationObject || null}, ${insertLog.result || null}, ${insertLog.level || null}, ${insertLog.source || null}, ${insertLog.terminalIp || null}, ${insertLog.details || null}, ${insertLog.isViolation || false}, ${sql.raw(`'${now}'`)})
+      `);
+    } else {
+      // For PostgreSQL: Use Drizzle ORM normally
+      await db.insert(nmsLogs).values({ 
+        ...insertLog, 
+        id,
+        timestamp: insertLog.timestamp instanceof Date ? insertLog.timestamp : new Date(insertLog.timestamp)
+      } as any);
+    }
+    
     const result = await db.select().from(nmsLogs).where(eq(nmsLogs.id, id));
     return result[0];
   }
@@ -663,15 +687,36 @@ export class DatabaseStorage implements IStorage {
     const BATCH_SIZE = 500;
     const allCreatedLogs: NmsLog[] = [];
 
-    for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
-      const batch = insertLogs.slice(i, i + BATCH_SIZE);
-      const batchWithIds = batch.map(log => ({ 
-        ...log, 
-        id: uuidv4(),
-        timestamp: formatTimestampForDb(log.timestamp) as any
-      }));
-      await db.insert(nmsLogs).values(batchWithIds as any);
-      allCreatedLogs.push(...batchWithIds.map(l => ({ ...l } as NmsLog)));
+    if (isUsingMySQL()) {
+      // For MySQL: Use raw SQL to avoid Drizzle's toISOString() call
+      for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
+        const batch = insertLogs.slice(i, i + BATCH_SIZE);
+        
+        for (const log of batch) {
+          const id = uuidv4();
+          const ts = formatMySQLTimestamp(log.timestamp);
+          const now = formatMySQLTimestamp(new Date());
+          
+          await db.execute(sql`
+            INSERT INTO nms_logs (id, nms_system_id, operator_id, operator_username, timestamp, operation, operation_object, result, level, source, terminal_ip, details, is_violation, created_at)
+            VALUES (${id}, ${log.nmsSystemId}, ${log.operatorId || null}, ${log.operatorUsername}, ${sql.raw(`'${ts}'`)}, ${log.operation}, ${log.operationObject || null}, ${log.result || null}, ${log.level || null}, ${log.source || null}, ${log.terminalIp || null}, ${log.details || null}, ${log.isViolation || false}, ${sql.raw(`'${now}'`)})
+          `);
+          
+          allCreatedLogs.push({ ...log, id, timestamp: new Date(log.timestamp) } as NmsLog);
+        }
+      }
+    } else {
+      // For PostgreSQL: Use Drizzle ORM normally
+      for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
+        const batch = insertLogs.slice(i, i + BATCH_SIZE);
+        const batchWithIds = batch.map(log => ({ 
+          ...log, 
+          id: uuidv4(),
+          timestamp: log.timestamp instanceof Date ? log.timestamp : new Date(log.timestamp)
+        }));
+        await db.insert(nmsLogs).values(batchWithIds as any);
+        allCreatedLogs.push(...batchWithIds.map(l => ({ ...l } as NmsLog)));
+      }
     }
 
     return allCreatedLogs;
