@@ -14,6 +14,12 @@ import {
 import { db } from "./db";
 import { eq, desc, and, gte, lte, like, or, sql, count } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+// Helper function to serialize JSON for MySQL
+function serializeJson(value: any): string | null {
+  if (value === null || value === undefined) return null;
+  return JSON.stringify(value);
+}
+
 
 export interface IStorage {
   // User methods
@@ -646,7 +652,14 @@ export class DatabaseStorage implements IStorage {
 
   async createAnalysisReport(insertReport: InsertAnalysisReport): Promise<AnalysisReport> {
     const id = uuidv4();
-    await db.insert(analysisReports).values({ ...insertReport, id } as any);
+    const serializedReport = {
+      ...insertReport,
+      id,
+      violations: serializeJson((insertReport as any).violations),
+      risks: serializeJson((insertReport as any).risks),
+      recommendations: serializeJson((insertReport as any).recommendations),
+    };
+    await db.insert(analysisReports).values(serializedReport as any);
     const result = await db.select().from(analysisReports).where(eq(analysisReports.id, id));
     return result[0];
   }

@@ -120,13 +120,39 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
       const minute = parseInt(match[5]);
       const second = parseInt(match[6]);
 
-      return new Date(year, month, day, hour, minute, second);
+      // Validate year is reasonable (MySQL requires year >= 1000)
+      if (year < 1970 || year > 2100) {
+        console.warn(`Invalid year ${year} in timestamp: ${timeStr}, skipping...`);
+        return null;
+      }
+
+      // Validate month and day
+      if (month < 0 || month > 11 || day < 1 || day > 31) {
+        console.warn(`Invalid month/day in timestamp: ${timeStr}, skipping...`);
+        return null;
+      }
+
+      const date = new Date(year, month, day, hour, minute, second);
+      
+      // Extra validation: check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date created from: ${timeStr}, skipping...`);
+        return null;
+      }
+
+      return date;
     }
   }
 
   try {
     const date = new Date(cleanTime);
     if (!isNaN(date.getTime())) {
+      // Validate the parsed date has a reasonable year
+      const year = date.getFullYear();
+      if (year < 1970 || year > 2100) {
+        console.warn(`Invalid year ${year} in timestamp: ${timeStr}, skipping...`);
+        return null;
+      }
       return date;
     }
   } catch (e) {

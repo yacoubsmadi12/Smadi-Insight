@@ -1,7 +1,7 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Log, Employee } from "@shared/schema";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 interface ReportResult {
   summary: string;
@@ -22,17 +22,10 @@ export async function generateEmployeeReport(
   logs: Log[],
   dateRange: string
 ): Promise<ReportResult> {
-  const systemPrompt = `You are an expert HR analyst and compliance officer for Smadi Insight. 
-Analyze employee activity logs and generate a comprehensive report that includes:
-1. A brief summary of overall performance and compliance
-2. A list of key actions taken by the employee
-3. Identified risks or concerns
-4. Policy violations (if any)
-5. Recommended next steps
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-Consider the employee's job description and company rules when analyzing the logs.`;
+  const prompt = `You are an expert HR analyst and compliance officer. Analyze employee activity logs and generate a comprehensive report.
 
-  const prompt = `
 Employee Information:
 - Name: ${employee.name}
 - Role: ${employee.role}
@@ -45,53 +38,32 @@ Company Rules & Policies:
 ${employee.rules || "Standard company policies apply"}
 
 Activity Logs (${dateRange}):
-${logs.map((log, i) => `${i + 1}. [${log.timestamp}] ${log.source} - ${log.action}: ${log.details || "N/A"}`).join("\n")}
+${logs.slice(0, 100).map((log, i) => `${i + 1}. [${log.timestamp}] ${log.source} - ${log.action}: ${log.details || "N/A"}`).join("\n")}
 
-Based on the above information, analyze the employee's activities and provide insights.
-`;
+Respond in JSON format:
+{
+  "summary": "Brief summary of performance and compliance",
+  "actions": ["List of key actions"],
+  "risks": ["Identified risks"],
+  "violations": ["Policy violations if any"],
+  "nextSteps": ["Recommended next steps"],
+  "complianceScore": 85
+}`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-pro",
-    config: {
-      systemInstruction: systemPrompt,
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: "object",
-        properties: {
-          summary: { type: "string" },
-          actions: {
-            type: "array",
-            items: { type: "string" },
-          },
-          risks: {
-            type: "array",
-            items: { type: "string" },
-          },
-          violations: {
-            type: "array",
-            items: { type: "string" },
-          },
-          nextSteps: {
-            type: "array",
-            items: { type: "string" },
-          },
-          complianceScore: { type: "number" },
-        },
-        required: ["summary", "actions", "risks", "violations", "nextSteps"],
-      },
-    },
-    contents: prompt,
-  });
-
-  const rawJson = response.text;
-  if (!rawJson) {
-    throw new Error("Empty response from Gemini");
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  const text = response.text();
+  
+  // Extract JSON from response
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    throw new Error("No JSON found in response");
   }
-
-  const data = JSON.parse(rawJson);
+  
+  const data = JSON.parse(jsonMatch[0]);
 
   return {
-    summary: data.summary,
+    summary: data.summary || "No summary available",
     actions: data.actions || [],
     risks: data.risks || [],
     violations: data.violations || [],
