@@ -10,6 +10,7 @@ import { generateEmployeeReport } from "./services/gemini";
 import { parseHuaweiNmsLogs } from "./services/huaweiParser";
 import { analyzeOperatorLogs } from "./services/analysisEngine";
 import { analyzeNmsLogs, generateHtmlReport } from "./services/logAnalytics";
+import { getSyslogStats, simulateSyslogMessages } from "./syslog";
 import { 
   insertEmployeeSchema, insertLogSchema, insertTemplateSchema,
   insertNmsSystemSchema, insertManagerSchema, insertOperatorGroupSchema,
@@ -1391,6 +1392,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           logs: logs.length,
           reports: reports.length
         }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Syslog Statistics - Get real-time syslog receiver stats
+  app.get("/api/syslog/stats", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const stats = getSyslogStats();
+      res.json(stats);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Syslog Simulation - Generate test logs from multiple sources
+  app.post("/api/syslog/simulate", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { count = 100, sources } = req.body;
+      
+      const defaultSources = [
+        "192.168.1.10",
+        "192.168.1.20", 
+        "10.0.0.50",
+        "172.16.0.100",
+        "192.168.100.1"
+      ];
+
+      const sourcesToUse = sources && Array.isArray(sources) && sources.length > 0 
+        ? sources 
+        : defaultSources;
+
+      const maxCount = Math.min(count, 1000);
+      
+      const result = await simulateSyslogMessages(maxCount, sourcesToUse);
+      
+      res.json({
+        message: `Successfully simulated ${result.simulated} syslog messages`,
+        ...result
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
