@@ -108,5 +108,16 @@ npm run db:push
 - ✅ Redesigned login page (registration removed)
 - ✅ Updated translations for both English and Arabic
 - ✅ New tagline: "Eyes That Never Sleep" (عيون لا تنام)
-- ✅ Single admin login: username "admin", password "admin"
+- ✅ Single admin login: username "admin", password "admin123"
 - ✅ Database connected for storing API data and file uploads
+
+## Migration to Replit (December 2, 2025)
+- ✅ Project migrated from MySQL to PostgreSQL (Replit only supports PostgreSQL)
+- ✅ Database schema converted using Drizzle ORM with pg-core
+- ✅ Neon serverless driver configured for PostgreSQL connection
+- ✅ All database tables recreated and admin user seeded
+- ✅ Application verified working with login functionality
+
+## Default Login Credentials
+- **Username:** admin
+- **Password:** admin123
