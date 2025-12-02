@@ -137,6 +137,9 @@ export default function LoginPage() {
         <p className="text-center text-xs text-muted-foreground/60 mt-6" data-testid="text-copyright">
           2024 {t("common.brand")}. All rights reserved.
         </p>
+        <p className="text-center text-xs text-muted-foreground/40 mt-2" data-testid="text-credit">
+          By Eng.Yacoub.Smadi
+        </p>
       </div>
     </div>
   );
