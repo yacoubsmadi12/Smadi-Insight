@@ -1180,9 +1180,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const analysis = analyzeNmsLogs(logs, operators, groups, managers);
 
       if (format === 'html') {
-        const htmlReport = generateHtmlReport(analysis);
+        const sanitizedName = system.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50);
+        const htmlReport = generateHtmlReport(analysis, system.name);
         res.setHeader('Content-Type', 'text/html');
-        res.setHeader('Content-Disposition', `attachment; filename="analysis-report-${id}.html"`);
+        res.setHeader('Content-Disposition', `attachment; filename="analysis-report-${sanitizedName}.html"`);
         return res.send(htmlReport);
       }
 

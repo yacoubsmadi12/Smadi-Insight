@@ -595,8 +595,19 @@ function generateExecutiveSummary(
   return summary;
 }
 
-export function generateHtmlReport(analysis: ComprehensiveAnalysis): string {
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+export function generateHtmlReport(analysis: ComprehensiveAnalysis, systemName?: string): string {
   const { overview, performanceMetrics, recommendations, executiveSummary } = analysis;
+  const escapedSystemName = systemName ? escapeHtml(systemName) : null;
+  const reportTitle = escapedSystemName ? `${escapedSystemName} - Log Analysis Report` : 'NMS Log Analysis Report';
 
   return `
 <!DOCTYPE html>
@@ -604,7 +615,7 @@ export function generateHtmlReport(analysis: ComprehensiveAnalysis): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NMS Log Analysis Report</title>
+  <title>${reportTitle}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
     .container { max-width: 1200px; margin: 0 auto; }
@@ -634,7 +645,7 @@ export function generateHtmlReport(analysis: ComprehensiveAnalysis): string {
 <body>
   <div class="container">
     <div class="card">
-      <h1>NMS Log Analysis Report</h1>
+      <h1>${reportTitle}</h1>
       <p>Generated: ${new Date().toLocaleString()}</p>
     </div>
 

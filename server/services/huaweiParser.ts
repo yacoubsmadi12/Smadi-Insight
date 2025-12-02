@@ -91,6 +91,25 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
 
   const cleanTime = timeStr.replace(/\t/g, '').trim();
   
+  // Handle ISO 8601 format first (2025-12-01T00:15:32.000Z or 2025-12-01T00:15:32Z)
+  const isoPattern = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?Z?$/;
+  const isoMatch = cleanTime.match(isoPattern);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1]);
+    const month = parseInt(isoMatch[2]) - 1;
+    const day = parseInt(isoMatch[3]);
+    const hour = parseInt(isoMatch[4]);
+    const minute = parseInt(isoMatch[5]);
+    const second = parseInt(isoMatch[6]);
+    
+    if (year >= 1970 && year <= 2100 && month >= 0 && month <= 11 && day >= 1 && day <= 31) {
+      const date = new Date(Date.UTC(year, month, day, hour, minute, second));
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+  }
+  
   const patterns = [
     /(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/,
     /(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})/,
@@ -120,13 +139,11 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
       const minute = parseInt(match[5]);
       const second = parseInt(match[6]);
 
-      // Validate year is reasonable (MySQL requires year >= 1000)
       if (year < 1970 || year > 2100) {
         console.warn(`Invalid year ${year} in timestamp: ${timeStr}, skipping...`);
         return null;
       }
 
-      // Validate month and day
       if (month < 0 || month > 11 || day < 1 || day > 31) {
         console.warn(`Invalid month/day in timestamp: ${timeStr}, skipping...`);
         return null;
@@ -134,7 +151,6 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
 
       const date = new Date(year, month, day, hour, minute, second);
       
-      // Extra validation: check if date is valid
       if (isNaN(date.getTime())) {
         console.warn(`Invalid date created from: ${timeStr}, skipping...`);
         return null;
@@ -147,7 +163,6 @@ function parseHuaweiTimestamp(timeStr: string): Date | null {
   try {
     const date = new Date(cleanTime);
     if (!isNaN(date.getTime())) {
-      // Validate the parsed date has a reasonable year
       const year = date.getFullYear();
       if (year < 1970 || year > 2100) {
         console.warn(`Invalid year ${year} in timestamp: ${timeStr}, skipping...`);
