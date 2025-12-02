@@ -1,5 +1,27 @@
 import type { NmsLog, Operator, OperatorGroup, Manager } from "@shared/schema";
 
+// Safe timestamp helper - handles Date objects, strings, and invalid values
+function safeTimestamp(ts: any): Date {
+  if (ts instanceof Date && !isNaN(ts.getTime())) {
+    return ts;
+  }
+  if (typeof ts === 'string') {
+    const parsed = new Date(ts);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return new Date(); // fallback to current time
+}
+
+function safeTimestampString(ts: any): string {
+  try {
+    return safeTimestamp(ts).toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 export interface OperatorStats {
   operatorId: string;
   username: string;
@@ -88,11 +110,11 @@ export function analyzeNmsLogs(
   }
 
   const sortedLogs = [...logs].sort((a, b) => 
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    safeTimestamp(a.timestamp).getTime() - safeTimestamp(b.timestamp).getTime()
   );
 
-  const startDate = new Date(sortedLogs[0].timestamp);
-  const endDate = new Date(sortedLogs[sortedLogs.length - 1].timestamp);
+  const startDate = safeTimestamp(sortedLogs[0].timestamp);
+  const endDate = safeTimestamp(sortedLogs[sortedLogs.length - 1].timestamp);
 
   const successLogs = logs.filter(l => l.result === 'Successful');
   const failedLogs = logs.filter(l => l.result === 'Failed');
@@ -218,7 +240,7 @@ function calculateOperatorStats(logs: NmsLog[], operatorMap: Map<string, Operato
 
     operatorLogs.forEach(log => {
       operationCounts.set(log.operation, (operationCounts.get(log.operation) || 0) + 1);
-      activeHoursSet.add(new Date(log.timestamp).getHours());
+      activeHoursSet.add(safeTimestamp(log.timestamp).getHours());
     });
 
     const mostUsedOperations = Array.from(operationCounts.entries())
@@ -227,7 +249,7 @@ function calculateOperatorStats(logs: NmsLog[], operatorMap: Map<string, Operato
       .map(([operation, count]) => ({ operation: truncateOperation(operation), count }));
 
     const lastLog = operatorLogs.sort((a, b) => 
-      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime()
     )[0];
 
     return {
@@ -241,7 +263,7 @@ function calculateOperatorStats(logs: NmsLog[], operatorMap: Map<string, Operato
       violations: violationLogs.length,
       mostUsedOperations,
       activeHours: Array.from(activeHoursSet).sort((a, b) => a - b),
-      lastActivity: lastLog ? new Date(lastLog.timestamp) : null,
+      lastActivity: lastLog ? safeTimestamp(lastLog.timestamp) : null,
     };
   }).sort((a, b) => b.totalOperations - a.totalOperations);
 }
@@ -298,7 +320,7 @@ function calculateHourlyActivity(logs: NmsLog[]): HourlyActivity[] {
   }
 
   logs.forEach(log => {
-    const hour = new Date(log.timestamp).getHours();
+    const hour = safeTimestamp(log.timestamp).getHours();
     const existing = hourlyMap.get(hour)!;
     existing.count++;
     if (log.result === 'Successful') existing.successCount++;
@@ -319,7 +341,7 @@ function calculateDailyActivity(logs: NmsLog[]): DailyActivity[] {
   }>();
 
   logs.forEach(log => {
-    const date = new Date(log.timestamp).toISOString().split('T')[0];
+    const date = safeTimestampString(log.timestamp).split('T')[0];
     const existing = dailyMap.get(date) || {
       count: 0,
       successCount: 0,
@@ -364,13 +386,13 @@ function detectAnomalies(logs: NmsLog[], operators: Operator[]): AnomalyDetectio
         severity: failureRate > 50 ? 'CRITICAL' : 'HIGH',
         description: `Operator ${username} has ${failureRate.toFixed(1)}% failure rate (${failedLogs.length}/${opLogs.length} operations)`,
         operatorUsername: username,
-        timestamp: new Date(opLogs[opLogs.length - 1].timestamp),
+        timestamp: safeTimestamp(opLogs[opLogs.length - 1].timestamp),
         details: { failureRate, totalOperations: opLogs.length, failedOperations: failedLogs.length },
       });
     }
 
     const unusualHoursLogs = opLogs.filter(log => {
-      const hour = new Date(log.timestamp).getHours();
+      const hour = safeTimestamp(log.timestamp).getHours();
       return hour >= 0 && hour < 6;
     });
 
@@ -380,18 +402,18 @@ function detectAnomalies(logs: NmsLog[], operators: Operator[]): AnomalyDetectio
         severity: 'MEDIUM',
         description: `Operator ${username} performed ${unusualHoursLogs.length} operations between midnight and 6 AM`,
         operatorUsername: username,
-        timestamp: new Date(unusualHoursLogs[0].timestamp),
+        timestamp: safeTimestamp(unusualHoursLogs[0].timestamp),
         details: { count: unusualHoursLogs.length },
       });
     }
 
     const sortedLogs = [...opLogs].sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      safeTimestamp(a.timestamp).getTime() - safeTimestamp(b.timestamp).getTime()
     );
 
     for (let i = 0; i < sortedLogs.length - 10; i++) {
-      const windowStart = new Date(sortedLogs[i].timestamp).getTime();
-      const windowEnd = new Date(sortedLogs[i + 10].timestamp).getTime();
+      const windowStart = safeTimestamp(sortedLogs[i].timestamp).getTime();
+      const windowEnd = safeTimestamp(sortedLogs[i + 10].timestamp).getTime();
       const windowMinutes = (windowEnd - windowStart) / (1000 * 60);
 
       if (windowMinutes < 1 && windowMinutes > 0) {
@@ -400,7 +422,7 @@ function detectAnomalies(logs: NmsLog[], operators: Operator[]): AnomalyDetectio
           severity: 'MEDIUM',
           description: `Operator ${username} performed 10+ operations in less than 1 minute`,
           operatorUsername: username,
-          timestamp: new Date(sortedLogs[i].timestamp),
+          timestamp: safeTimestamp(sortedLogs[i].timestamp),
           details: { operationsPerMinute: Math.round(10 / windowMinutes) },
         });
         break;
@@ -419,7 +441,7 @@ function detectAnomalies(logs: NmsLog[], operators: Operator[]): AnomalyDetectio
           severity: count >= 10 ? 'HIGH' : 'MEDIUM',
           description: `Operator ${username} failed operation "${truncateOperation(operation)}" ${count} times`,
           operatorUsername: username,
-          timestamp: new Date(failedLogs[failedLogs.length - 1].timestamp),
+          timestamp: safeTimestamp(failedLogs[failedLogs.length - 1].timestamp),
           details: { operation, failureCount: count },
         });
       }

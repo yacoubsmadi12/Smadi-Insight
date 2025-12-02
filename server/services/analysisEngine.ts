@@ -145,12 +145,27 @@ async function generateAISummary(
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  const operationSummary = logs.slice(0, 50).map(l => ({
-    operation: l.operation,
-    result: l.result,
-    time: new Date(l.timestamp).toISOString(),
-    isViolation: l.isViolation,
-  }));
+  const operationSummary = logs.slice(0, 50).map(l => {
+    let timeStr = '';
+    try {
+      const ts = l.timestamp;
+      if (ts instanceof Date) {
+        timeStr = ts.toISOString();
+      } else if (typeof ts === 'string') {
+        timeStr = ts;
+      } else if (ts) {
+        timeStr = new Date(ts).toISOString();
+      }
+    } catch {
+      timeStr = String(l.timestamp || '');
+    }
+    return {
+      operation: l.operation,
+      result: l.result,
+      time: timeStr,
+      isViolation: l.isViolation,
+    };
+  });
 
   const prompt = `You are an expert network operations analyst. Analyze the following operator activity report and provide a professional summary suitable for management review.
 

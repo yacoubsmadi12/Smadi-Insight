@@ -18,6 +18,28 @@ import {
 import { db } from "./db";
 import { sql } from "drizzle-orm";
 
+// Safe timestamp helper - handles Date objects, strings, and invalid values
+function safeTimestamp(ts: any): Date {
+  if (ts instanceof Date && !isNaN(ts.getTime())) {
+    return ts;
+  }
+  if (typeof ts === 'string') {
+    const parsed = new Date(ts);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return new Date(); // fallback to current time
+}
+
+function safeTimestampString(ts: any): string {
+  try {
+    return safeTimestamp(ts).toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 let wss: WebSocketServer;
 
 export function broadcastLog(log: any) {
@@ -466,7 +488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const hourlyActivity = Array.from({ length: 24 }, (_, hour) => {
         const hourLogs = allNmsLogs.filter(log => {
-          const logHour = new Date(log.timestamp).getHours();
+          const logHour = safeTimestamp(log.timestamp).getHours();
           return logHour === hour;
         });
         return {
@@ -479,7 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const dailyMap = new Map<string, { count: number; successful: number; failed: number }>();
       allNmsLogs.forEach(log => {
-        const date = new Date(log.timestamp).toISOString().split('T')[0];
+        const date = safeTimestampString(log.timestamp).split('T')[0];
         const existing = dailyMap.get(date) || { count: 0, successful: 0, failed: 0 };
         existing.count++;
         if (log.result === 'Successful') existing.successful++;
@@ -511,7 +533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .slice(0, 10);
       
       const recentLogs = allNmsLogs
-        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .sort((a, b) => safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime())
         .slice(0, 20);
 
       res.json({
