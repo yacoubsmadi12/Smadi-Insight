@@ -25,9 +25,13 @@ function serializeJson(value: any): string | null {
 function formatTimestampForDb(date: Date | string | null | undefined): Date | string | null {
   if (!date) return null;
   
-  // Check if running on MySQL by looking at DATABASE_URL or DB_DIALECT env var
+  // Check if running on MySQL by looking at multiple indicators
+  const dbUrl = process.env.DATABASE_URL || '';
   const isMySQL = process.env.DB_DIALECT === 'mysql' || 
-                  (process.env.DATABASE_URL && !process.env.DATABASE_URL.includes('postgres'));
+                  dbUrl.includes('mysql') ||
+                  process.env.MYSQL_HOST !== undefined ||
+                  process.env.MYSQL_DATABASE !== undefined ||
+                  (dbUrl && !dbUrl.includes('postgres') && !dbUrl.includes('neon'));
   
   if (!isMySQL) {
     // PostgreSQL can handle Date objects directly
