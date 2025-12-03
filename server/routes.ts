@@ -483,10 +483,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
       
+      const globalStats = await storage.getGlobalNmsLogStats();
+      const successfulOperations = globalStats.successful;
+      const failedOperations = globalStats.failed;
+      const totalViolations = globalStats.violations;
+      
       const allNmsLogs = await storage.getNmsLogs({ limit: 50000 });
-      const successfulOperations = allNmsLogs.filter(l => l.result === 'Successful').length;
-      const failedOperations = allNmsLogs.filter(l => l.result === 'Failed').length;
-      const totalViolations = allNmsLogs.filter(l => l.isViolation).length;
       
       const hourlyActivity = Array.from({ length: 24 }, (_, hour) => {
         const hourLogs = allNmsLogs.filter(log => {
@@ -545,7 +547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activeEmployees: employees.filter(e => e.status === "active").length,
         totalNmsSystems: nmsSystems.length,
         activeNmsSystems: nmsSystems.filter(s => s.status === 'active').length,
-        totalNmsLogs: allNmsLogs.length,
+        totalNmsLogs: globalStats.total,
         successfulOperations,
         failedOperations,
         totalViolations,

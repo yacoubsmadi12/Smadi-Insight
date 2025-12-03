@@ -177,6 +177,7 @@ export interface IStorage {
   createNmsLog(log: InsertNmsLog): Promise<NmsLog>;
   createNmsLogs(logs: InsertNmsLog[]): Promise<NmsLog[]>;
   getNmsLogStats(nmsSystemId: string): Promise<{ total: number; successful: number; failed: number }>;
+  getGlobalNmsLogStats(): Promise<{ total: number; successful: number; failed: number; violations: number }>;
   deleteOldNmsLogs(nmsSystemId: string, olderThanDays: number): Promise<number>;
   deleteAllNmsLogs(nmsSystemId: string): Promise<number>;
 
@@ -757,6 +758,20 @@ export class DatabaseStorage implements IStorage {
       total: Number(allLogs[0]?.count || 0),
       successful: Number(successLogs[0]?.count || 0),
       failed: Number(failedLogs[0]?.count || 0),
+    };
+  }
+
+  async getGlobalNmsLogStats(): Promise<{ total: number; successful: number; failed: number; violations: number }> {
+    const allLogs = await db.select({ count: count() }).from(nmsLogs);
+    const successLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.result, "Successful"));
+    const failedLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.result, "Failed"));
+    const violationLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.isViolation, true));
+
+    return {
+      total: Number(allLogs[0]?.count || 0),
+      successful: Number(successLogs[0]?.count || 0),
+      failed: Number(failedLogs[0]?.count || 0),
+      violations: Number(violationLogs[0]?.count || 0),
     };
   }
 
