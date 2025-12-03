@@ -22,6 +22,19 @@ interface ReportFilters {
   reportType?: string;
 }
 
+const parseJsonField = (field: string | any[] | null | undefined): any[] => {
+  if (!field) return [];
+  if (Array.isArray(field)) return field;
+  if (typeof field === 'string') {
+    try {
+      return JSON.parse(field);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
 export default function AnalysisReportsPage() {
   const { toast } = useToast();
   const [filters, setFilters] = useState<ReportFilters>({});
@@ -271,10 +284,10 @@ export default function AnalysisReportsPage() {
                         </div>
                       )}
 
-                      {report.violations && (report.violations as any[]).length > 0 && (
+                      {parseJsonField(report.violations).length > 0 && (
                         <div className="flex items-center gap-1 text-sm text-destructive">
                           <AlertTriangle className="w-4 h-4" />
-                          <span>{(report.violations as any[]).length} violation types detected</span>
+                          <span>{parseJsonField(report.violations).length} violation types detected</span>
                         </div>
                       )}
 
@@ -353,7 +366,7 @@ export default function AnalysisReportsPage() {
                       </CardContent>
                     </Card>
 
-                    {selectedReport.violations && (selectedReport.violations as any[]).length > 0 && (
+                    {parseJsonField(selectedReport.violations).length > 0 && (
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
@@ -363,7 +376,7 @@ export default function AnalysisReportsPage() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            {(selectedReport.violations as any[]).map((violation: any, index: number) => (
+                            {parseJsonField(selectedReport.violations).map((violation: any, index: number) => (
                               <div key={index} className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
                                 <div className="flex justify-between items-start">
                                   <span className="font-medium">{violation.type}</span>
@@ -386,7 +399,7 @@ export default function AnalysisReportsPage() {
                       </Card>
                     )}
 
-                    {selectedReport.risks && (selectedReport.risks as any[]).length > 0 && (
+                    {parseJsonField(selectedReport.risks).length > 0 && (
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
@@ -396,12 +409,12 @@ export default function AnalysisReportsPage() {
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-2">
-                            {(selectedReport.risks as any[]).map((risk: any, index: number) => (
+                            {parseJsonField(selectedReport.risks).map((risk: any, index: number) => (
                               <div key={index} className="p-3 rounded-md bg-yellow-500/10 border border-yellow-500/20">
                                 <div className="flex items-start gap-2">
                                   <Badge 
                                     variant="outline" 
-                                    className={`shrink-0 ${risk.level === 'high' ? 'border-red-500 text-red-600' : risk.level === 'medium' ? 'border-yellow-500 text-yellow-600' : 'border-green-500 text-green-600'}`}
+                                    className={`shrink-0 ${risk.level === 'high' || risk.level === 'HIGH' ? 'border-red-500 text-red-600' : risk.level === 'medium' || risk.level === 'MEDIUM' ? 'border-yellow-500 text-yellow-600' : 'border-green-500 text-green-600'}`}
                                   >
                                     {risk.level}
                                   </Badge>
@@ -414,7 +427,7 @@ export default function AnalysisReportsPage() {
                       </Card>
                     )}
 
-                    {selectedReport.recommendations && (selectedReport.recommendations as any[]).length > 0 && (
+                    {parseJsonField(selectedReport.recommendations).length > 0 && (
                       <Card>
                         <CardHeader className="pb-2">
                           <CardTitle className="text-sm flex items-center gap-2">
@@ -424,7 +437,7 @@ export default function AnalysisReportsPage() {
                         </CardHeader>
                         <CardContent>
                           <ul className="space-y-2 text-sm">
-                            {(selectedReport.recommendations as any[]).map((rec: string, index: number) => (
+                            {parseJsonField(selectedReport.recommendations).map((rec: string, index: number) => (
                               <li key={index} className="flex items-start gap-2">
                                 <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 shrink-0" />
                                 <span>{rec}</span>
