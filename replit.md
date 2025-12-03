@@ -162,9 +162,33 @@ export const db = drizzle(pool, { schema });
   - System information (CPU, memory, uptime)
 - ✅ Back navigation arrows for improved UX
 
+## Email Settings & Scheduled Reports (December 3, 2025)
+- Email server configuration with SMTP settings
+- TLS/SSL support with authentication
+- Scheduled reports (weekly/monthly/quarterly)
+- Admin email recipients management
+
+## Advanced Telecom Log Parser (December 3, 2025)
+- Multi-source parsing from 20+ NMS systems
+- Supports Huawei, Cisco, Linux, Windows, and generic syslog formats
+- Automatic violation detection:
+  - Deletion Operations (DEL-ONT, DEL-ONTPORT, etc.)
+  - Failed Operations (DENY responses)
+  - User Management (ADD-USER, DEL-USER, MOD-USER)
+  - System Critical Operations (SYS-UPGRADE, SYS-REBOOT)
+  - Configuration Restore operations
+  - High Risk operations (DEACT-ONT, MOD-ONTPROFILE)
+- Operator tracking with terminal IP addresses
+- Realistic log simulation for testing
+
 ## API Endpoints
 - `GET /api/dashboard/stats` - Enhanced dashboard statistics with hourly/daily activity
+- `GET /api/dashboard/violations` - List of violations with operator details
+- `GET /api/dashboard/operator-stats` - Operator statistics with violation counts
 - `GET /api/admin/db-stats` - Database record counts for all tables
 - `DELETE /api/admin/clear-nms-data` - Clear all NMS-related data
 - `DELETE /api/admin/clear-legacy-data` - Clear all legacy employee data
 - `GET /api/system/info` - Server resource monitoring
+- `POST /api/telecom/simulate` - Simulate telecom logs from multiple sources
+- `GET/POST /api/email-settings` - Email server configuration
+- `GET/POST/DELETE /api/scheduled-reports` - Scheduled reports management
