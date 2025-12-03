@@ -1509,11 +1509,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test email connection
   app.post("/api/email-settings/test", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const settings = await storage.getEmailSettings();
-      if (!settings) {
-        return res.status(400).json({ message: "Email settings not configured" });
+      const { smtpHost, smtpPort, smtpUser, smtpPassword, fromEmail, fromName, enableSsl } = req.body;
+      
+      // Use provided values from form or fall back to saved settings
+      let testSettings = {
+        smtpHost,
+        smtpPort,
+        smtpUser: smtpUser || "",
+        smtpPassword: smtpPassword || "",
+        fromEmail,
+        fromName,
+        enableSsl
+      };
+      
+      // If no form values provided, try to use saved settings
+      if (!testSettings.smtpHost) {
+        const savedSettings = await storage.getEmailSettings();
+        if (!savedSettings) {
+          return res.status(400).json({ 
+            message: "Please provide SMTP host and port to test connection", 
+            success: false 
+          });
+        }
+        // Map database field names to form field names
+        testSettings = {
+          smtpHost: savedSettings.smtpHost,
+          smtpPort: savedSettings.smtpPort,
+          smtpUser: savedSettings.smtpUser || "",
+          smtpPassword: savedSettings.smtpPassword || "",
+          fromEmail: savedSettings.fromEmail,
+          fromName: savedSettings.fromName || "",
+          enableSsl: savedSettings.smtpSecure ?? true
+        };
       }
-      res.json({ message: "Email settings are valid", success: true });
+      
+      // Validate required fields
+      if (!testSettings.smtpHost || !testSettings.fromEmail) {
+        return res.status(400).json({ 
+          message: "SMTP Host and From Email are required for testing", 
+          success: false 
+        });
+      }
+      
+      // Simple validation - in production you would actually test the SMTP connection
+      // For now we just validate the settings format
+      const portNum = parseInt(String(testSettings.smtpPort));
+      if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+        return res.status(400).json({ 
+          message: "Invalid SMTP port number", 
+          success: false 
+        });
+      }
+      
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(testSettings.fromEmail)) {
+        return res.status(400).json({ 
+          message: "Invalid from email address", 
+          success: false 
+        });
+      }
+      
+      // Success - settings are valid (without requiring credentials)
+      const authInfo = testSettings.smtpUser ? "with authentication" : "without authentication";
+      res.json({ 
+        message: `SMTP settings validated successfully (${authInfo}). Host: ${testSettings.smtpHost}:${testSettings.smtpPort}`, 
+        success: true 
+      });
     } catch (error: any) {
       res.status(500).json({ message: error.message, success: false });
     }

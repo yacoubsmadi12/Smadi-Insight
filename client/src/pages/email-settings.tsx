@@ -96,8 +96,8 @@ interface ScheduledReport {
 const emailSettingsSchema = z.object({
   smtpHost: z.string().min(1, "SMTP host is required"),
   smtpPort: z.number().min(1).max(65535),
-  smtpUser: z.string().min(1, "SMTP user is required"),
-  smtpPassword: z.string().min(1, "SMTP password is required"),
+  smtpUser: z.string().optional().default(""),
+  smtpPassword: z.string().optional().default(""),
   fromEmail: z.string().email("Valid email is required"),
   fromName: z.string().min(1, "From name is required"),
   enableSsl: z.boolean(),
@@ -182,8 +182,8 @@ export default function EmailSettingsPage() {
   });
 
   const testEmailMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/email-settings/test", {});
+    mutationFn: async (testData: EmailSettingsFormData) => {
+      const res = await apiRequest("POST", "/api/email-settings/test", testData);
       return res.json();
     },
     onSuccess: (data) => {
@@ -481,8 +481,19 @@ export default function EmailSettingsPage() {
                       <Button 
                         type="button" 
                         variant="outline"
-                        onClick={() => testEmailMutation.mutate()}
-                        disabled={testEmailMutation.isPending || !emailSettings?.isConfigured}
+                        onClick={() => {
+                          const formValues = emailForm.getValues();
+                          if (!formValues.smtpHost || !formValues.fromEmail) {
+                            toast({
+                              title: "Missing Required Fields",
+                              description: "Please fill in SMTP Host and From Email before testing",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          testEmailMutation.mutate(formValues);
+                        }}
+                        disabled={testEmailMutation.isPending}
                         data-testid="button-test-email"
                       >
                         {testEmailMutation.isPending ? (
