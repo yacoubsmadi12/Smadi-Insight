@@ -181,43 +181,79 @@ function parseNmsLogFromMessage(message: string, hostname: string): ParsedNmsLog
   let terminalIp = "";
   let logFormat = "generic";
 
-  const huaweiMatch = message.match(/User\s*[:=]\s*(\S+).*?(?:Operation|Action)\s*[:=]\s*([^;,]+).*?Result\s*[:=]\s*(Successful|Failed|Success|Failure)/i);
-  if (huaweiMatch) {
-    operatorUsername = huaweiMatch[1];
-    operation = huaweiMatch[2].trim();
-    result = huaweiMatch[3].toLowerCase().includes("fail") ? "Failed" : "Successful";
+  // Huawei NMS OperationLog format: OperationLog%%ID # SEVERITY # USERNAME # APPLICATION # OPERATION # TARGET # RESULT # DETAILS
+  // Example: OperationLog%%559653282 # MINOR # kazema # NM Application(Access NetWork) # ACT-SERVICEPORT # Network Management # Failure # XML2TL1:...
+  const huaweiOperationLogMatch = message.match(/OperationLog%%\d+\s*#\s*(\w+)\s*#\s*([^#]+)\s*#\s*([^#]+)\s*#\s*([^#]+)\s*#\s*([^#]+)\s*#\s*(Success|Failure|Failed|Successful)/i);
+  if (huaweiOperationLogMatch) {
+    const severity = huaweiOperationLogMatch[1].trim();
+    operatorUsername = huaweiOperationLogMatch[2].trim();
+    const application = huaweiOperationLogMatch[3].trim();
+    operation = huaweiOperationLogMatch[4].trim();
+    operationObject = huaweiOperationLogMatch[5].trim();
+    const resultStr = huaweiOperationLogMatch[6].trim().toLowerCase();
+    result = (resultStr === "failure" || resultStr === "failed") ? "Failed" : "Successful";
     logFormat = "huawei_nms";
-  }
-
-  const ciscoMatch = message.match(/(?:%\w+-\d+-\w+):\s*(.+)/);
-  if (ciscoMatch) {
-    operation = ciscoMatch[1].substring(0, 100);
-    logFormat = "cisco";
     
-    const userMatch = message.match(/user\s+['"]?(\w+)['"]?/i);
-    if (userMatch) operatorUsername = userMatch[1];
+    // Extract IP from start of message if present
+    const ipAtStart = message.match(/^(\d+\.\d+\.\d+\.\d+)/);
+    if (ipAtStart) {
+      terminalIp = ipAtStart[1];
+    }
   }
 
-  const linuxMatch = message.match(/(\w+)\[(\d+)\]:\s*(.+)/);
-  if (linuxMatch && logFormat === "generic") {
-    operation = `${linuxMatch[1]}: ${linuxMatch[3].substring(0, 80)}`;
-    logFormat = "linux";
+  // Alternative Huawei format with User= keyword
+  if (logFormat === "generic") {
+    const huaweiMatch = message.match(/User\s*[:=]\s*(\S+).*?(?:Operation|Action)\s*[:=]\s*([^;,]+).*?Result\s*[:=]\s*(Successful|Failed|Success|Failure)/i);
+    if (huaweiMatch) {
+      operatorUsername = huaweiMatch[1];
+      operation = huaweiMatch[2].trim();
+      result = huaweiMatch[3].toLowerCase().includes("fail") ? "Failed" : "Successful";
+      logFormat = "huawei_nms";
+    }
   }
 
-  const windowsMatch = message.match(/EventID[:=]\s*(\d+).*?(?:User|Account)[:=]\s*(\S+)/i);
-  if (windowsMatch) {
-    operation = `Event ${windowsMatch[1]}`;
-    operatorUsername = windowsMatch[2];
-    logFormat = "windows";
+  // Cisco format
+  if (logFormat === "generic") {
+    const ciscoMatch = message.match(/(?:%\w+-\d+-\w+):\s*(.+)/);
+    if (ciscoMatch) {
+      operation = ciscoMatch[1].substring(0, 100);
+      logFormat = "cisco";
+      
+      const userMatch = message.match(/user\s+['"]?(\w+)['"]?/i);
+      if (userMatch) operatorUsername = userMatch[1];
+    }
   }
 
-  const networkMatch = message.match(/interface\s+(\S+)\s+(?:is\s+)?(up|down|changed)/i);
-  if (networkMatch) {
-    operationObject = networkMatch[1];
-    operation = `Interface ${networkMatch[2]}`;
-    logFormat = "network";
+  // Linux format
+  if (logFormat === "generic") {
+    const linuxMatch = message.match(/(\w+)\[(\d+)\]:\s*(.+)/);
+    if (linuxMatch) {
+      operation = `${linuxMatch[1]}: ${linuxMatch[3].substring(0, 80)}`;
+      logFormat = "linux";
+    }
   }
 
+  // Windows format
+  if (logFormat === "generic") {
+    const windowsMatch = message.match(/EventID[:=]\s*(\d+).*?(?:User|Account)[:=]\s*(\S+)/i);
+    if (windowsMatch) {
+      operation = `Event ${windowsMatch[1]}`;
+      operatorUsername = windowsMatch[2];
+      logFormat = "windows";
+    }
+  }
+
+  // Network interface format
+  if (logFormat === "generic") {
+    const networkMatch = message.match(/interface\s+(\S+)\s+(?:is\s+)?(up|down|changed)/i);
+    if (networkMatch) {
+      operationObject = networkMatch[1];
+      operation = `Interface ${networkMatch[2]}`;
+      logFormat = "network";
+    }
+  }
+
+  // Generic fallback parsing
   if (logFormat === "generic") {
     const usernameMatch = message.match(/(?:User|username|operator|account)[=:\s]+['"]?(\S+?)['"]?(?:\s|,|;|$)/i);
     const operationMatch = message.match(/(?:Operation|action|command|event)[=:\s]+['"]?([^;,'"]+)['"]?/i);
@@ -238,9 +274,17 @@ function parseNmsLogFromMessage(message: string, hostname: string): ParsedNmsLog
     }
   }
 
-  const globalIpMatch = message.match(/(\d+\.\d+\.\d+\.\d+)/);
-  if (!terminalIp && globalIpMatch) {
-    terminalIp = globalIpMatch[1];
+  // Global IP extraction fallback
+  if (!terminalIp) {
+    const globalIpMatch = message.match(/(\d+\.\d+\.\d+\.\d+)/);
+    if (globalIpMatch) {
+      terminalIp = globalIpMatch[1];
+    }
+  }
+
+  // Validate operator username - don't use invalid values
+  if (isTimezoneOffset(operatorUsername) || operatorUsername === "system" || operatorUsername === "unknown" || operatorUsername === "-") {
+    operatorUsername = "system";
   }
 
   return {
