@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion, useSpring, useTransform, useInView } from "framer-motion";
 import { apiCall } from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import Sidebar from "@/components/Sidebar";
@@ -98,38 +97,6 @@ interface DashboardStats {
 
 const COLORS = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
-function AnimatedCounter({ value, duration = 2 }: { value: number; duration?: number }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const isInView = useInView(ref, { once: true });
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(() => {
-    if (!isInView) return;
-    
-    const startTime = Date.now();
-    const endValue = value;
-    
-    const animate = () => {
-      const now = Date.now();
-      const elapsed = (now - startTime) / 1000;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      const currentValue = Math.floor(easeOutQuart * endValue);
-      
-      setDisplayValue(currentValue);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  }, [isInView, value, duration]);
-
-  return <span ref={ref}>{displayValue.toLocaleString()}</span>;
-}
-
 export default function DashboardPage() {
   const [showViolationsDialog, setShowViolationsDialog] = useState(false);
 
@@ -221,8 +188,8 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-cyan-500">
-                  <AnimatedCounter value={6000000} duration={3} />
+                <div className="text-3xl font-bold text-foreground">
+                  {(stats?.totalNmsLogs || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Network operations logged</p>
               </CardContent>

@@ -1383,7 +1383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/db-stats", authenticateToken, async (req: Request, res: Response) => {
     try {
       const nmsSystems = await storage.getNmsSystems();
-      const nmsLogs = await storage.getNmsLogs({ limit: 100000 });
+      const nmsLogs = await storage.getNmsLogs({ limit: 6000000 });
       const analysisReports = await storage.getAnalysisReports({});
       const operators = await storage.getOperators({});
       const operatorGroups = await storage.getOperatorGroups({});
