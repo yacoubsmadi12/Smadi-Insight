@@ -42,6 +42,14 @@ interface ViolationDetail {
   level: string;
 }
 
+interface FailedOperationDetail {
+  operation: string;
+  details: string;
+  timestamp: string;
+  source: string;
+  terminalIp: string;
+}
+
 interface OperatorStats {
   operatorId: string;
   username: string;
@@ -52,6 +60,7 @@ interface OperatorStats {
   successRate: number;
   violations: number;
   violationDetails?: ViolationDetail[];
+  failedOperationDetails?: FailedOperationDetail[];
   mostUsedOperations: Array<{ operation: string; count: number }>;
   lastActivity: string | null;
 }
@@ -398,9 +407,10 @@ export default function NmsAnalysisPage() {
                         <th className="text-left p-2">Operator</th>
                         <th className="text-right p-2">Total Ops</th>
                         <th className="text-right p-2">Success Rate</th>
+                        <th className="text-right p-2">Failed</th>
+                        <th className="text-left p-2">Failed Operations Details</th>
                         <th className="text-right p-2">Violations</th>
                         <th className="text-left p-2">Violation Details</th>
-                        <th className="text-left p-2">Top Operation</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -415,6 +425,41 @@ export default function NmsAnalysisPage() {
                             <Badge variant={op.successRate >= 90 ? "default" : op.successRate >= 70 ? "secondary" : "destructive"}>
                               {op.successRate.toFixed(1)}%
                             </Badge>
+                          </td>
+                          <td className="text-right p-2">
+                            {op.failedOperations > 0 ? (
+                              <Badge variant="secondary">{op.failedOperations}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </td>
+                          <td className="p-2 max-w-[350px]">
+                            {op.failedOperationDetails && op.failedOperationDetails.length > 0 ? (
+                              <div className="space-y-1">
+                                {op.failedOperationDetails.slice(0, 3).map((f, fIdx) => (
+                                  <div key={fIdx} className="text-xs">
+                                    <div className="flex items-center gap-1 flex-wrap">
+                                      <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                        {f.source}
+                                      </Badge>
+                                      <span className="text-muted-foreground text-[10px]">
+                                        IP: {f.terminalIp}
+                                      </span>
+                                    </div>
+                                    <div className="text-muted-foreground mt-0.5 truncate" title={f.details}>
+                                      {f.operation}
+                                    </div>
+                                  </div>
+                                ))}
+                                {op.failedOperationDetails.length > 3 && (
+                                  <div className="text-xs text-muted-foreground">
+                                    +{op.failedOperationDetails.length - 3} more...
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">-</span>
+                            )}
                           </td>
                           <td className="text-right p-2">
                             {op.violations > 0 ? (
@@ -453,9 +498,6 @@ export default function NmsAnalysisPage() {
                             ) : (
                               <span className="text-muted-foreground text-xs">-</span>
                             )}
-                          </td>
-                          <td className="p-2 max-w-[200px] truncate">
-                            {op.mostUsedOperations[0]?.operation || "N/A"}
                           </td>
                         </tr>
                       ))}

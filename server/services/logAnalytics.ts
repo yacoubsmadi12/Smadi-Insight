@@ -30,6 +30,14 @@ export interface ViolationDetail {
   level: string;
 }
 
+export interface FailedOperationDetail {
+  operation: string;
+  details: string;
+  timestamp: Date;
+  source: string;
+  terminalIp: string;
+}
+
 export interface OperatorStats {
   operatorId: string;
   username: string;
@@ -40,6 +48,7 @@ export interface OperatorStats {
   successRate: number;
   violations: number;
   violationDetails: ViolationDetail[];
+  failedOperationDetails: FailedOperationDetail[];
   mostUsedOperations: Array<{ operation: string; count: number }>;
   activeHours: number[];
   lastActivity: Date | null;
@@ -272,6 +281,17 @@ function calculateOperatorStats(logs: NmsLog[], operatorMap: Map<string, Operato
         level: log.level || 'Major',
       }));
 
+    const failedOperationDetails: FailedOperationDetail[] = failedLogs
+      .sort((a, b) => safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime())
+      .slice(0, 10)
+      .map(log => ({
+        operation: truncateOperation(log.operation),
+        details: log.details || log.operation,
+        timestamp: safeTimestamp(log.timestamp),
+        source: log.source || 'Unknown',
+        terminalIp: log.terminalIp || 'Unknown',
+      }));
+
     return {
       operatorId: data.operator?.id || username,
       username,
@@ -282,6 +302,7 @@ function calculateOperatorStats(logs: NmsLog[], operatorMap: Map<string, Operato
       successRate: operatorLogs.length > 0 ? (successLogs.length / operatorLogs.length) * 100 : 0,
       violations: violationLogs.length,
       violationDetails,
+      failedOperationDetails,
       mostUsedOperations,
       activeHours: Array.from(activeHoursSet).sort((a, b) => a - b),
       lastActivity: lastLog ? safeTimestamp(lastLog.timestamp) : null,
