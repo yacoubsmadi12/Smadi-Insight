@@ -255,10 +255,12 @@ export const emailSettings = pgTable("email_settings", {
 export const scheduledReports = pgTable("scheduled_reports", {
   id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
+  emailSubject: text("email_subject"),
   recipientEmails: text("recipient_emails").notNull(),
   frequency: text("frequency").notNull().default("weekly"),
   reportType: text("report_type").notNull().default("summary"),
   nmsSystemId: varchar("nms_system_id", { length: 36 }),
+  nmsSystemIds: text("nms_system_ids"),
   includeViolations: boolean("include_violations").default(true),
   includeFailedOps: boolean("include_failed_ops").default(true),
   includeOperatorStats: boolean("include_operator_stats").default(true),

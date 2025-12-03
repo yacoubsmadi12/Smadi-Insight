@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -66,7 +67,9 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
-  Edit
+  Edit,
+  PlayCircle,
+  Database
 } from "lucide-react";
 
 interface EmailSettings {
@@ -84,13 +87,21 @@ interface EmailSettings {
 interface ScheduledReport {
   id: string;
   name: string;
+  emailSubject?: string;
   frequency: string;
   recipientEmails: string;
   reportType: string;
+  nmsSystemIds?: string;
   isActive: boolean;
   lastSentAt: string | null;
   nextScheduledAt: string | null;
   createdAt: string;
+}
+
+interface NmsSystem {
+  id: string;
+  name: string;
+  status: string;
 }
 
 const emailSettingsSchema = z.object({
@@ -105,9 +116,11 @@ const emailSettingsSchema = z.object({
 
 const scheduledReportSchema = z.object({
   name: z.string().min(1, "Report name is required"),
-  frequency: z.enum(["weekly", "monthly", "quarterly"]),
+  emailSubject: z.string().optional(),
+  frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
   recipients: z.string().min(1, "At least one recipient is required"),
   reportType: z.enum(["violations", "operations", "summary", "full"]),
+  nmsSystemIds: z.array(z.string()).optional(),
   isActive: z.boolean(),
 });
 
@@ -119,6 +132,8 @@ export default function EmailSettingsPage() {
   const [showAddReportDialog, setShowAddReportDialog] = useState(false);
   const [editingReport, setEditingReport] = useState<ScheduledReport | null>(null);
   const [deleteReportId, setDeleteReportId] = useState<string | null>(null);
+  const [emailConfigured, setEmailConfigured] = useState(false);
+  const [sendingReportId, setSendingReportId] = useState<string | null>(null);
 
   const { data: emailSettings, isLoading: isLoadingSettings } = useQuery<EmailSettings | null>({
     queryKey: ["/api/email-settings"],
@@ -135,6 +150,20 @@ export default function EmailSettingsPage() {
       return res.json();
     },
   });
+
+  const { data: nmsSystems } = useQuery<NmsSystem[]>({
+    queryKey: ["/api/nms-systems"],
+    queryFn: async () => {
+      const res = await apiCall("/api/nms-systems");
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (emailSettings?.isConfigured) {
+      setEmailConfigured(true);
+    }
+  }, [emailSettings]);
 
   const emailForm = useForm<EmailSettingsFormData>({
     resolver: zodResolver(emailSettingsSchema),
@@ -153,9 +182,11 @@ export default function EmailSettingsPage() {
     resolver: zodResolver(scheduledReportSchema),
     defaultValues: {
       name: "",
+      emailSubject: "",
       frequency: "weekly",
       recipients: "",
       reportType: "summary",
+      nmsSystemIds: [],
       isActive: true,
     },
   });
@@ -187,6 +218,9 @@ export default function EmailSettingsPage() {
       return res.json();
     },
     onSuccess: (data) => {
+      if (data.success) {
+        setEmailConfigured(true);
+      }
       toast({
         title: data.success ? "Test Successful" : "Test Failed",
         description: data.message,
@@ -204,7 +238,11 @@ export default function EmailSettingsPage() {
 
   const createReportMutation = useMutation({
     mutationFn: async (data: ScheduledReportFormData) => {
-      const res = await apiRequest("POST", "/api/scheduled-reports", data);
+      const payload = {
+        ...data,
+        nmsSystemIds: data.nmsSystemIds?.join(',') || '',
+      };
+      const res = await apiRequest("POST", "/api/scheduled-reports", payload);
       return res.json();
     },
     onSuccess: () => {
@@ -227,12 +265,17 @@ export default function EmailSettingsPage() {
 
   const updateReportMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<ScheduledReportFormData> }) => {
-      const res = await apiRequest("PATCH", `/api/scheduled-reports/${id}`, data);
+      const payload = {
+        ...data,
+        nmsSystemIds: data.nmsSystemIds?.join(',') || '',
+      };
+      const res = await apiRequest("PATCH", `/api/scheduled-reports/${id}`, payload);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/scheduled-reports"] });
       setEditingReport(null);
+      setShowAddReportDialog(false);
       toast({
         title: "Report Updated",
         description: "Scheduled report has been updated successfully.",
@@ -269,6 +312,30 @@ export default function EmailSettingsPage() {
     },
   });
 
+  const sendNowMutation = useMutation({
+    mutationFn: async (reportId: string) => {
+      const res = await apiRequest("POST", `/api/scheduled-reports/${reportId}/send-now`, {});
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setSendingReportId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/scheduled-reports"] });
+      toast({
+        title: data.success ? "Email Sent" : "Send Failed",
+        description: data.message,
+        variant: data.success ? "default" : "destructive",
+      });
+    },
+    onError: (error: any) => {
+      setSendingReportId(null);
+      toast({
+        title: "Send Failed",
+        description: error.message || "Failed to send report email",
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmitEmailSettings = (data: EmailSettingsFormData) => {
     saveEmailSettingsMutation.mutate(data);
   };
@@ -288,7 +355,13 @@ export default function EmailSettingsPage() {
     });
   };
 
+  const handleSendNow = (reportId: string) => {
+    setSendingReportId(reportId);
+    sendNowMutation.mutate(reportId);
+  };
+
   const frequencyLabels: Record<string, string> = {
+    daily: "Daily",
     weekly: "Weekly",
     monthly: "Monthly",
     quarterly: "Quarterly",
@@ -299,6 +372,17 @@ export default function EmailSettingsPage() {
     operations: "Operations Summary",
     summary: "Executive Summary",
     full: "Full Analysis Report",
+  };
+
+  const selectedNmsSystemIds = reportForm.watch("nmsSystemIds") || [];
+
+  const toggleNmsSystem = (systemId: string) => {
+    const current = reportForm.getValues("nmsSystemIds") || [];
+    if (current.includes(systemId)) {
+      reportForm.setValue("nmsSystemIds", current.filter(id => id !== systemId));
+    } else {
+      reportForm.setValue("nmsSystemIds", [...current, systemId]);
+    }
   };
 
   return (
@@ -509,10 +593,10 @@ export default function EmailSettingsPage() {
               </CardContent>
               <CardFooter className="border-t pt-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {emailSettings?.isConfigured ? (
+                  {emailConfigured || emailSettings?.isConfigured ? (
                     <>
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      Email server is configured
+                      Email server configured successfully
                     </>
                   ) : (
                     <>
@@ -537,7 +621,16 @@ export default function EmailSettingsPage() {
                   <Button 
                     size="sm" 
                     onClick={() => {
-                      reportForm.reset();
+                      reportForm.reset({
+                        name: "",
+                        emailSubject: "",
+                        frequency: "weekly",
+                        recipients: "",
+                        reportType: "summary",
+                        nmsSystemIds: [],
+                        isActive: true,
+                      });
+                      setEditingReport(null);
                       setShowAddReportDialog(true);
                     }}
                     data-testid="button-add-scheduled-report"
@@ -572,6 +665,11 @@ export default function EmailSettingsPage() {
                                   {frequencyLabels[report.frequency] || report.frequency}
                                 </Badge>
                               </div>
+                              {report.emailSubject && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  Subject: {report.emailSubject}
+                                </p>
+                              )}
                               <p className="text-sm text-muted-foreground mt-1">
                                 {reportTypeLabels[report.reportType] || report.reportType}
                               </p>
@@ -580,6 +678,12 @@ export default function EmailSettingsPage() {
                                   <Mail className="w-3 h-3" />
                                   {(report.recipientEmails || '').split(',').filter(e => e.trim()).length} recipient(s)
                                 </span>
+                                {report.nmsSystemIds && (
+                                  <span className="flex items-center gap-1">
+                                    <Database className="w-3 h-3" />
+                                    {report.nmsSystemIds.split(',').filter(id => id.trim()).length} NMS system(s)
+                                  </span>
+                                )}
                                 {report.lastSentAt && (
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
@@ -589,6 +693,20 @@ export default function EmailSettingsPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => handleSendNow(report.id)}
+                                disabled={sendingReportId === report.id || !emailConfigured}
+                                title="Send Now"
+                                data-testid={`button-send-now-${report.id}`}
+                              >
+                                {sendingReportId === report.id ? (
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <PlayCircle className="w-4 h-4 text-blue-500" />
+                                )}
+                              </Button>
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -608,9 +726,11 @@ export default function EmailSettingsPage() {
                                   setEditingReport(report);
                                   reportForm.reset({
                                     name: report.name,
+                                    emailSubject: report.emailSubject || "",
                                     frequency: report.frequency as any,
                                     recipients: report.recipientEmails,
                                     reportType: report.reportType as any,
+                                    nmsSystemIds: report.nmsSystemIds ? report.nmsSystemIds.split(',').filter(id => id.trim()) : [],
                                     isActive: report.isActive,
                                   });
                                   setShowAddReportDialog(true);
@@ -652,14 +772,23 @@ export default function EmailSettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="p-4 rounded-lg bg-muted/50 border">
+                  <h4 className="font-medium flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-green-500" />
+                    Daily Reports
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sent every day at 8:00 AM. Quick summary of daily activities and violations.
+                  </p>
+                </div>
                 <div className="p-4 rounded-lg bg-muted/50 border">
                   <h4 className="font-medium flex items-center gap-2 mb-2">
                     <Clock className="w-4 h-4 text-blue-500" />
                     Weekly Reports
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    Sent every Monday at 8:00 AM. Includes weekly summary of operations, violations, and operator performance.
+                    Sent every Monday at 8:00 AM. Includes weekly summary of operations and violations.
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/50 border">
@@ -668,7 +797,7 @@ export default function EmailSettingsPage() {
                     Monthly Reports
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    Sent on the 1st of each month. Comprehensive analysis of monthly trends, top issues, and recommendations.
+                    Sent on the 1st of each month. Comprehensive analysis of monthly trends.
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/50 border">
@@ -677,7 +806,7 @@ export default function EmailSettingsPage() {
                     Quarterly Reports
                   </h4>
                   <p className="text-sm text-muted-foreground">
-                    Sent at the start of each quarter. Executive summary with long-term trends and strategic insights.
+                    Sent at the start of each quarter. Executive summary with strategic insights.
                   </p>
                 </div>
               </div>
@@ -693,7 +822,7 @@ export default function EmailSettingsPage() {
           reportForm.reset();
         }
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingReport ? "Edit Scheduled Report" : "Create Scheduled Report"}
@@ -725,6 +854,27 @@ export default function EmailSettingsPage() {
                 )}
               />
 
+              <FormField
+                control={reportForm.control}
+                name="emailSubject"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Subject</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="[NMS Report] Weekly Violations Summary - {date}" 
+                        {...field} 
+                        data-testid="input-email-subject"
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Custom subject for the email. Use {"{date}"} to include the report date.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={reportForm.control}
@@ -739,6 +889,7 @@ export default function EmailSettingsPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                          <SelectItem value="daily">Daily</SelectItem>
                           <SelectItem value="weekly">Weekly</SelectItem>
                           <SelectItem value="monthly">Monthly</SelectItem>
                           <SelectItem value="quarterly">Quarterly</SelectItem>
@@ -793,6 +944,43 @@ export default function EmailSettingsPage() {
                   </FormItem>
                 )}
               />
+
+              {nmsSystems && nmsSystems.length > 0 && (
+                <FormField
+                  control={reportForm.control}
+                  name="nmsSystemIds"
+                  render={() => (
+                    <FormItem>
+                      <FormLabel>NMS Systems</FormLabel>
+                      <FormDescription className="text-xs mb-2">
+                        Select one or more NMS systems to include in the report
+                      </FormDescription>
+                      <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                        {nmsSystems.map((system) => (
+                          <div
+                            key={system.id}
+                            className="flex items-center space-x-2"
+                          >
+                            <Checkbox
+                              id={`nms-${system.id}`}
+                              checked={selectedNmsSystemIds.includes(system.id)}
+                              onCheckedChange={() => toggleNmsSystem(system.id)}
+                              data-testid={`checkbox-nms-${system.id}`}
+                            />
+                            <label
+                              htmlFor={`nms-${system.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {system.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={reportForm.control}
