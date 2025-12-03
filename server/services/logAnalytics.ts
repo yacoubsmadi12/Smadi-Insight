@@ -669,157 +669,315 @@ function escapeHtml(text: string): string {
 }
 
 export function generateHtmlReport(analysis: ComprehensiveAnalysis, systemName?: string): string {
-  const { overview, performanceMetrics, recommendations, executiveSummary } = analysis;
+  const { overview, performanceMetrics, recommendations, executiveSummary, operatorStats, hourlyActivity, dailyActivity, anomalies, topErrors, sourceStats, ipStats } = analysis;
   const escapedSystemName = systemName ? escapeHtml(systemName) : null;
   const reportTitle = escapedSystemName ? `${escapedSystemName} - Log Analysis Report` : 'NMS Log Analysis Report';
+  const dateRange = `${new Date(overview.dateRange.start).toLocaleDateString()} - ${new Date(overview.dateRange.end).toLocaleDateString()}`;
+
+  const maxHourlyCount = Math.max(...hourlyActivity.map(h => h.count), 1);
 
   return `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${reportTitle}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-    .container { max-width: 1200px; margin: 0 auto; }
-    .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    h1 { color: #1a1a2e; margin-bottom: 10px; }
-    h2 { color: #16213e; border-bottom: 2px solid #0f3460; padding-bottom: 10px; }
-    .summary { white-space: pre-line; background: #f8f9fa; padding: 15px; border-radius: 4px; }
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-    .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; }
-    .stat-value { font-size: 2em; font-weight: bold; }
-    .stat-label { opacity: 0.9; margin-top: 5px; }
-    .success { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-    .danger { background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%); }
-    .warning { background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); }
-    .recommendation { padding: 10px; margin: 5px 0; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 0 4px 4px 0; }
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-    th { background: #f8f9fa; font-weight: 600; }
-    tr:hover { background: #f5f5f5; }
-    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: 500; }
-    .badge-critical { background: #fee2e2; color: #991b1b; }
-    .badge-high { background: #fed7aa; color: #9a3412; }
-    .badge-medium { background: #fef3c7; color: #92400e; }
-    .badge-low { background: #d1fae5; color: #065f46; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #0f172a; color: #e2e8f0; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-radius: 12px; padding: 30px; margin-bottom: 25px; border: 1px solid #334155; }
+    .header h1 { color: #f8fafc; margin: 0 0 10px 0; font-size: 2em; }
+    .header p { color: #94a3b8; margin: 5px 0; }
+    .card { background: #1e293b; border-radius: 12px; padding: 25px; margin-bottom: 25px; border: 1px solid #334155; }
+    h2 { color: #f8fafc; border-bottom: 2px solid #3b82f6; padding-bottom: 12px; margin-top: 0; font-size: 1.4em; }
+    h3 { color: #cbd5e1; margin: 20px 0 15px 0; font-size: 1.1em; }
+    .summary { white-space: pre-line; background: #0f172a; padding: 20px; border-radius: 8px; border: 1px solid #334155; color: #cbd5e1; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .stat-card { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+    .stat-value { font-size: 2.2em; font-weight: bold; }
+    .stat-label { opacity: 0.9; margin-top: 8px; font-size: 0.9em; }
+    .success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+    .warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+    .info { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); }
+    .recommendation { padding: 12px 15px; margin: 8px 0; background: #172554; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; color: #bfdbfe; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9em; }
+    th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #334155; }
+    th { background: #0f172a; font-weight: 600; color: #94a3b8; text-transform: uppercase; font-size: 0.8em; letter-spacing: 0.5px; }
+    tr:hover { background: #334155; }
+    td { color: #e2e8f0; }
+    .badge { padding: 4px 10px; border-radius: 6px; font-size: 0.8em; font-weight: 600; display: inline-block; }
+    .badge-critical { background: #7f1d1d; color: #fecaca; }
+    .badge-high { background: #7c2d12; color: #fed7aa; }
+    .badge-medium { background: #78350f; color: #fef3c7; }
+    .badge-low { background: #064e3b; color: #a7f3d0; }
+    .badge-success { background: #064e3b; color: #a7f3d0; }
+    .badge-failed { background: #7f1d1d; color: #fecaca; }
+    .badge-violation { background: #581c87; color: #e9d5ff; }
+    .badge-source { background: #1e3a5f; color: #93c5fd; }
+    .detail-box { background: #0f172a; padding: 10px; border-radius: 6px; margin-top: 8px; font-size: 0.85em; border: 1px solid #334155; }
+    .detail-item { margin: 5px 0; color: #94a3b8; }
+    .section-divider { border: 0; border-top: 1px solid #334155; margin: 30px 0; }
+    .chart-container { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 10px 0; }
+    .chart-bar { flex: 1; background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 4px 4px 0 0; min-width: 20px; transition: all 0.3s; }
+    .chart-bar:hover { background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 100%); }
+    .chart-labels { display: flex; gap: 4px; }
+    .chart-label { flex: 1; text-align: center; font-size: 0.7em; color: #64748b; min-width: 20px; }
+    .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+    @media (max-width: 768px) { .two-column { grid-template-columns: 1fr; } }
+    .page-break { page-break-before: always; }
+    @media print {
+      body { background: white; color: black; }
+      .card { border: 1px solid #ddd; box-shadow: none; }
+      .stat-card, .badge { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="card">
+    <!-- HEADER -->
+    <div class="header">
       <h1>${reportTitle}</h1>
       <p>Generated: ${new Date().toLocaleString()}</p>
+      <p>Analysis Period: ${dateRange}</p>
     </div>
 
+    <!-- SECTION 1: OVERVIEW -->
     <div class="card">
-      <h2>Executive Summary</h2>
+      <h2>1. Overview - Executive Summary</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">${overview.totalLogs.toLocaleString()}</div>
+          <div class="stat-label">Total Operations</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-value">${overview.uniqueOperators}</div>
+          <div class="stat-label">Active Operators</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-value">${overview.successRate.toFixed(1)}%</div>
+          <div class="stat-label">Success Rate</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-value">${overview.failureRate.toFixed(1)}%</div>
+          <div class="stat-label">Failure Rate</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-value">${overview.totalViolations}</div>
+          <div class="stat-label">Violations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${overview.uniqueOperations}</div>
+          <div class="stat-label">Unique Operations</div>
+        </div>
+      </div>
+
+      <h3>Executive Summary</h3>
       <div class="summary">${executiveSummary}</div>
-    </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-value">${overview.totalLogs.toLocaleString()}</div>
-        <div class="stat-label">Total Operations</div>
-      </div>
-      <div class="stat-card success">
-        <div class="stat-value">${overview.successRate.toFixed(1)}%</div>
-        <div class="stat-label">Success Rate</div>
-      </div>
-      <div class="stat-card danger">
-        <div class="stat-value">${overview.failureRate.toFixed(1)}%</div>
-        <div class="stat-label">Failure Rate</div>
-      </div>
-      <div class="stat-card warning">
-        <div class="stat-value">${overview.totalViolations}</div>
-        <div class="stat-label">Violations</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Performance Metrics</h2>
+      <h3>Performance Metrics</h3>
       <div class="stats-grid">
         <div><strong>Peak Hour:</strong> ${performanceMetrics.peakHour}:00</div>
         <div><strong>Peak Day:</strong> ${performanceMetrics.peakDay}</div>
         <div><strong>Avg Operations/Day:</strong> ${performanceMetrics.avgOperationsPerDay}</div>
+        <div><strong>Avg Operations/Operator:</strong> ${performanceMetrics.avgOperationsPerOperator}</div>
         <div><strong>Operator Efficiency:</strong> ${performanceMetrics.operatorEfficiency}%</div>
       </div>
+
+      <h3>Recommendations</h3>
+      ${recommendations.map(r => `<div class="recommendation">${escapeHtml(r)}</div>`).join('')}
     </div>
 
-    <div class="card">
-      <h2>Recommendations</h2>
-      ${recommendations.map(r => `<div class="recommendation">${r}</div>`).join('')}
-    </div>
-
-    <div class="card">
-      <h2>Top Operators</h2>
+    <!-- SECTION 2: OPERATORS -->
+    <div class="card page-break">
+      <h2>2. Operators - Detailed Statistics</h2>
+      <p style="color: #94a3b8; margin-bottom: 20px;">${operatorStats.length} operators analyzed</p>
       <table>
         <thead>
           <tr>
             <th>Operator</th>
             <th>Total Ops</th>
             <th>Success Rate</th>
+            <th>Failed</th>
+            <th>Failed Operations Details</th>
             <th>Violations</th>
+            <th>Violation Details</th>
           </tr>
         </thead>
         <tbody>
-          ${analysis.operatorStats.slice(0, 10).map(op => `
+          ${operatorStats.slice(0, 30).map(op => `
             <tr>
-              <td>${op.fullName || op.username}</td>
+              <td><strong>${escapeHtml(op.fullName || op.username)}</strong>${op.fullName ? `<br><span style="color:#64748b;font-size:0.85em">${escapeHtml(op.username)}</span>` : ''}</td>
               <td>${op.totalOperations.toLocaleString()}</td>
-              <td>${op.successRate.toFixed(1)}%</td>
-              <td>${op.violations}</td>
+              <td><span class="badge ${op.successRate >= 90 ? 'badge-success' : op.successRate >= 70 ? 'badge-medium' : 'badge-failed'}">${op.successRate.toFixed(1)}%</span></td>
+              <td>${op.failedOperations > 0 ? `<span class="badge badge-failed">${op.failedOperations}</span>` : '<span style="color:#64748b">0</span>'}</td>
+              <td>${op.failedOperationDetails && op.failedOperationDetails.length > 0 ? `
+                <div class="detail-box">
+                  ${op.failedOperationDetails.slice(0, 3).map(f => `
+                    <div class="detail-item">
+                      <span class="badge badge-source">${escapeHtml(f.source)}</span> 
+                      <span style="color:#64748b">IP: ${escapeHtml(f.terminalIp)}</span><br>
+                      <span style="color:#fecaca">${escapeHtml(f.operation)}</span>
+                    </div>
+                  `).join('')}
+                  ${op.failedOperationDetails.length > 3 ? `<div style="color:#64748b;margin-top:5px">+${op.failedOperationDetails.length - 3} more...</div>` : ''}
+                </div>
+              ` : '<span style="color:#64748b">-</span>'}</td>
+              <td>${op.violations > 0 ? `<span class="badge badge-violation">${op.violations}</span>` : '<span style="color:#64748b">0</span>'}</td>
+              <td>${op.violationDetails && op.violationDetails.length > 0 ? `
+                <div class="detail-box">
+                  ${op.violationDetails.slice(0, 3).map(v => `
+                    <div class="detail-item">
+                      <span class="badge badge-source">${escapeHtml(v.type)}</span>
+                      <span class="badge ${v.level === 'Critical' ? 'badge-critical' : 'badge-medium'}">${escapeHtml(v.level)}</span><br>
+                      <span style="color:#e9d5ff">${escapeHtml(v.operation)}</span>
+                    </div>
+                  `).join('')}
+                  ${op.violationDetails.length > 3 ? `<div style="color:#64748b;margin-top:5px">+${op.violationDetails.length - 3} more...</div>` : ''}
+                </div>
+              ` : '<span style="color:#64748b">-</span>'}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
     </div>
 
-    <div class="card">
-      <h2>Anomalies Detected</h2>
+    <!-- SECTION 3: ACTIVITY -->
+    <div class="card page-break">
+      <h2>3. Activity - Time Distribution</h2>
+      
+      <h3>Hourly Activity (24h)</h3>
+      <div class="chart-container">
+        ${hourlyActivity.map(h => `
+          <div class="chart-bar" style="height: ${maxHourlyCount > 0 ? (h.count / maxHourlyCount) * 100 : 0}%" title="${h.hour}:00 - ${h.count} operations (${h.successCount} success, ${h.failCount} failed)"></div>
+        `).join('')}
+      </div>
+      <div class="chart-labels">
+        ${hourlyActivity.map(h => `<div class="chart-label">${h.hour}</div>`).join('')}
+      </div>
+
+      <h3>Daily Activity</h3>
       <table>
         <thead>
           <tr>
-            <th>Severity</th>
-            <th>Type</th>
-            <th>Description</th>
-            <th>Operator</th>
+            <th>Date</th>
+            <th>Total Operations</th>
+            <th>Successful</th>
+            <th>Failed</th>
+            <th>Active Operators</th>
           </tr>
         </thead>
         <tbody>
-          ${analysis.anomalies.slice(0, 20).map(a => `
+          ${dailyActivity.slice(-14).map(d => `
             <tr>
-              <td><span class="badge badge-${a.severity.toLowerCase()}">${a.severity}</span></td>
-              <td>${a.type}</td>
-              <td>${a.description}</td>
-              <td>${a.operatorUsername}</td>
+              <td>${d.date}</td>
+              <td>${d.count.toLocaleString()}</td>
+              <td><span class="badge badge-success">${d.successCount}</span></td>
+              <td>${d.failCount > 0 ? `<span class="badge badge-failed">${d.failCount}</span>` : '<span style="color:#64748b">0</span>'}</td>
+              <td>${d.uniqueOperators}</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
+
+      <div class="two-column" style="margin-top: 25px;">
+        <div>
+          <h3>Operations by Source</h3>
+          <table>
+            <thead><tr><th>Source</th><th>Count</th></tr></thead>
+            <tbody>
+              ${sourceStats.slice(0, 10).map(s => `<tr><td>${escapeHtml(s.source)}</td><td>${s.count.toLocaleString()}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <h3>Operations by IP Address</h3>
+          <table>
+            <thead><tr><th>IP Address</th><th>Count</th><th>Operators</th></tr></thead>
+            <tbody>
+              ${ipStats.slice(0, 10).map(ip => `<tr><td>${escapeHtml(ip.ip)}</td><td>${ip.count.toLocaleString()}</td><td style="font-size:0.85em;color:#94a3b8">${ip.operators.slice(0, 3).join(', ')}${ip.operators.length > 3 ? '...' : ''}</td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Top Errors</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Error</th>
-            <th>Count</th>
-            <th>Affected Operations</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${analysis.topErrors.slice(0, 10).map(e => `
+    <!-- SECTION 4: ANOMALIES -->
+    <div class="card page-break">
+      <h2>4. Anomalies - Security & Behavioral Alerts</h2>
+      <p style="color: #94a3b8; margin-bottom: 20px;">${anomalies.length} anomalies detected</p>
+      
+      ${anomalies.length === 0 ? `
+        <div style="text-align:center; padding: 40px; color: #10b981;">
+          <div style="font-size: 3em;">&#10004;</div>
+          <p style="font-size: 1.2em;">No anomalies detected. System operating normally.</p>
+        </div>
+      ` : `
+        <table>
+          <thead>
             <tr>
-              <td>${e.error}</td>
-              <td>${e.count}</td>
-              <td>${e.operations.join(', ')}</td>
+              <th>Severity</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Operator</th>
+              <th>Timestamp</th>
             </tr>
-          `).join('')}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            ${anomalies.map(a => `
+              <tr>
+                <td><span class="badge badge-${a.severity.toLowerCase()}">${a.severity}</span></td>
+                <td>${escapeHtml(a.type.replace(/_/g, ' '))}</td>
+                <td>${escapeHtml(a.description)}</td>
+                <td>${escapeHtml(a.operatorUsername)}</td>
+                <td style="font-size:0.85em;color:#94a3b8">${new Date(a.timestamp).toLocaleString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `}
+    </div>
+
+    <!-- SECTION 5: ERRORS -->
+    <div class="card page-break">
+      <h2>5. Errors - Failed Operations Analysis</h2>
+      <p style="color: #94a3b8; margin-bottom: 20px;">${topErrors.length} unique error types identified</p>
+      
+      ${topErrors.length === 0 ? `
+        <div style="text-align:center; padding: 40px; color: #10b981;">
+          <div style="font-size: 3em;">&#10004;</div>
+          <p style="font-size: 1.2em;">No errors recorded. All operations completed successfully.</p>
+        </div>
+      ` : `
+        <table>
+          <thead>
+            <tr>
+              <th>Error Description</th>
+              <th>Occurrences</th>
+              <th>Affected Operations</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${topErrors.map(e => `
+              <tr>
+                <td><span class="badge badge-failed">${e.count}x</span> ${escapeHtml(e.error)}</td>
+                <td>${e.count}</td>
+                <td style="font-size:0.85em;color:#94a3b8">${e.operations.map(o => escapeHtml(o)).join(', ')}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `}
+    </div>
+
+    <!-- FOOTER -->
+    <div style="text-align: center; padding: 30px; color: #64748b; font-size: 0.9em;">
+      <hr style="border: 0; border-top: 1px solid #334155; margin-bottom: 20px;">
+      <p>Tracer Logs Zain - Eyes That Never Sleep</p>
+      <p>Report generated automatically by NMS Log Analysis System</p>
+      <p>${new Date().toISOString()}</p>
     </div>
   </div>
 </body>
