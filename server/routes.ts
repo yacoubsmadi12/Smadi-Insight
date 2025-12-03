@@ -1575,14 +1575,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         host: testSettings.smtpHost,
         port: portNum,
         secure: testSettings.enableSsl && portNum === 465, // true for 465, false for other ports
-        connectionTimeout: 10000, // 10 second timeout
-        greetingTimeout: 5000,
+        connectionTimeout: 30000, // 30 second timeout for connection
+        greetingTimeout: 30000, // 30 second timeout for greeting
+        socketTimeout: 30000, // 30 second socket timeout
+        ignoreTLS: !testSettings.enableSsl, // Ignore TLS when SSL is disabled
+        requireTLS: false, // Don't require TLS upgrade
       };
       
-      // Add TLS options for non-465 ports when SSL is enabled
+      // Add TLS options
       if (testSettings.enableSsl && portNum !== 465) {
         transporterConfig.tls = {
           rejectUnauthorized: false // Allow self-signed certificates
+        };
+      } else if (!testSettings.enableSsl) {
+        // For non-SSL connections, disable TLS completely
+        transporterConfig.tls = {
+          rejectUnauthorized: false
         };
       }
       
@@ -1593,6 +1601,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pass: testSettings.smtpPassword
         };
       }
+      
+      console.log(`[SMTP Test] Connecting to ${testSettings.smtpHost}:${portNum} (SSL: ${testSettings.enableSsl}, Auth: ${!!testSettings.smtpUser})`);
       
       const transporter = nodemailer.createTransport(transporterConfig);
       
@@ -1606,25 +1616,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true 
       });
     } catch (error: any) {
+      // Log detailed error for debugging
+      console.error(`[SMTP Test Error] Code: ${error.code}, Message: ${error.message}`);
+      
       // Provide helpful error messages based on error type
       let errorMessage = error.message || "SMTP connection failed";
       
       if (error.code === 'ECONNREFUSED') {
-        errorMessage = `Connection refused - check if SMTP server is running on ${req.body.smtpHost}:${req.body.smtpPort}`;
-      } else if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET') {
-        errorMessage = `Connection timed out - verify host and port are correct`;
+        errorMessage = `Connection refused - SMTP server at ${req.body.smtpHost}:${req.body.smtpPort} is not accepting connections. Check if the server is running and the port is open.`;
+      } else if (error.code === 'ETIMEDOUT') {
+        errorMessage = `Connection timed out - Could not reach ${req.body.smtpHost}:${req.body.smtpPort}. Check firewall rules and network connectivity.`;
+      } else if (error.code === 'ESOCKET') {
+        errorMessage = `Socket error - Network issue connecting to ${req.body.smtpHost}:${req.body.smtpPort}. Verify the server is reachable and port ${req.body.smtpPort} is open.`;
       } else if (error.code === 'EAUTH' || error.responseCode === 535) {
         errorMessage = `Authentication failed - check username and password`;
       } else if (error.code === 'ENOTFOUND') {
         errorMessage = `Host not found - verify SMTP host address: ${req.body.smtpHost}`;
       } else if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
         errorMessage = `SSL/TLS certificate error - try disabling SSL or contact your email provider`;
+      } else if (error.code === 'ECONNRESET') {
+        errorMessage = `Connection reset by server - the SMTP server closed the connection unexpectedly`;
       }
       
       res.status(400).json({ 
         message: errorMessage, 
         success: false,
-        errorCode: error.code || 'UNKNOWN'
+        errorCode: error.code || 'UNKNOWN',
+        details: error.message
       });
     }
   });
