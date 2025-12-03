@@ -595,32 +595,84 @@ function generateRecommendations(
   const recommendations: string[] = [];
 
   const failureRate = totalLogs > 0 ? (failedLogs / totalLogs) * 100 : 0;
-  if (failureRate > 10) {
-    recommendations.push(`High failure rate detected (${failureRate.toFixed(1)}%). Review operator training and system configuration.`);
-  }
-
   const violationRate = totalLogs > 0 ? (violationLogs / totalLogs) * 100 : 0;
-  if (violationRate > 5) {
-    recommendations.push(`Violation rate is ${violationRate.toFixed(1)}%. Consider reviewing access policies and operator permissions.`);
-  }
-
   const criticalAnomalies = anomalies.filter(a => a.severity === 'CRITICAL');
-  if (criticalAnomalies.length > 0) {
-    recommendations.push(`${criticalAnomalies.length} critical anomalies detected. Immediate investigation recommended.`);
-  }
-
+  const highAnomalies = anomalies.filter(a => a.severity === 'HIGH');
+  const unusualHoursAnomalies = anomalies.filter(a => a.type === 'UNUSUAL_HOURS');
+  const rapidOperationsAnomalies = anomalies.filter(a => a.type === 'RAPID_OPERATIONS');
+  const repeatedFailuresAnomalies = anomalies.filter(a => a.type === 'REPEATED_FAILURES');
   const lowPerformers = operatorStats.filter(o => o.successRate < 70 && o.totalOperations >= 10);
+  const highViolationOperators = operatorStats.filter(o => o.violations > 3);
+
+  // Critical recommendations
+  if (criticalAnomalies.length > 0) {
+    recommendations.push(`[CRITICAL] ${criticalAnomalies.length} critical anomalies detected requiring immediate investigation. Operators involved: ${Array.from(new Set(criticalAnomalies.map(a => a.operatorUsername))).join(', ')}`);
+  }
+
+  // High severity recommendations
+  if (highAnomalies.length > 0) {
+    recommendations.push(`[HIGH] ${highAnomalies.length} high severity alerts detected. Review security logs and operator activities.`);
+  }
+
+  // Failure rate recommendations
+  if (failureRate > 30) {
+    recommendations.push(`[CRITICAL] Extremely high failure rate (${failureRate.toFixed(1)}%). Immediate system review required. Check network connectivity, system resources, and operator credentials.`);
+  } else if (failureRate > 20) {
+    recommendations.push(`[HIGH] Very high failure rate (${failureRate.toFixed(1)}%). Review system configuration and operator training urgently.`);
+  } else if (failureRate > 10) {
+    recommendations.push(`[MEDIUM] Elevated failure rate (${failureRate.toFixed(1)}%). Monitor closely and consider targeted operator training.`);
+  } else if (failureRate > 5) {
+    recommendations.push(`[LOW] Slightly elevated failure rate (${failureRate.toFixed(1)}%). Continue monitoring for trends.`);
+  }
+
+  // Violation recommendations
+  if (violationLogs > 10) {
+    recommendations.push(`[HIGH] ${violationLogs} security violations detected. Immediate security audit recommended. Review access controls and permission policies.`);
+  } else if (violationLogs > 5) {
+    recommendations.push(`[MEDIUM] ${violationLogs} security violations detected. Review operator access permissions and enforce stricter policies.`);
+  } else if (violationLogs > 0) {
+    recommendations.push(`[LOW] ${violationLogs} security violation(s) detected. Document incidents and review with operators.`);
+  }
+
+  // Low performer recommendations
   if (lowPerformers.length > 0) {
-    recommendations.push(`${lowPerformers.length} operators have success rate below 70%. Consider additional training.`);
+    const lowPerformerNames = lowPerformers.slice(0, 3).map(o => o.fullName || o.username).join(', ');
+    recommendations.push(`[MEDIUM] ${lowPerformers.length} operator(s) with success rate below 70%: ${lowPerformerNames}${lowPerformers.length > 3 ? ` and ${lowPerformers.length - 3} more` : ''}. Schedule performance review and additional training.`);
   }
 
-  const unusualHours = anomalies.filter(a => a.type === 'UNUSUAL_HOURS');
-  if (unusualHours.length > 0) {
-    recommendations.push(`After-hours activity detected for ${unusualHours.length} operators. Verify authorization.`);
+  // High violation operators
+  if (highViolationOperators.length > 0) {
+    const violatorNames = highViolationOperators.slice(0, 3).map(o => `${o.fullName || o.username} (${o.violations} violations)`).join(', ');
+    recommendations.push(`[HIGH] Operators with multiple violations: ${violatorNames}. Conduct security review with supervisors.`);
   }
 
+  // Unusual hours activity
+  if (unusualHoursAnomalies.length > 0) {
+    const afterHoursOperators = Array.from(new Set(unusualHoursAnomalies.map(a => a.operatorUsername)));
+    recommendations.push(`[MEDIUM] After-hours activity (midnight-6AM) detected for ${afterHoursOperators.length} operator(s): ${afterHoursOperators.slice(0, 3).join(', ')}. Verify shift schedules and authorization.`);
+  }
+
+  // Rapid operations
+  if (rapidOperationsAnomalies.length > 0) {
+    recommendations.push(`[MEDIUM] Unusually rapid operations detected (10+ ops/minute). May indicate automated scripts or potential security concern. Review with operators.`);
+  }
+
+  // Repeated failures
+  if (repeatedFailuresAnomalies.length > 0) {
+    recommendations.push(`[LOW] Repeated failures on same operations detected. Review operator training on specific procedures or check system issues.`);
+  }
+
+  // Success recommendations
   if (recommendations.length === 0) {
-    recommendations.push('System operating within normal parameters. Continue monitoring.');
+    recommendations.push(`[INFO] System operating within normal parameters. All metrics are within acceptable thresholds.`);
+    recommendations.push(`[INFO] Continue regular monitoring and maintain current operational practices.`);
+    if (operatorStats.length > 0) {
+      const topPerformer = operatorStats.reduce((prev, curr) => 
+        (curr.successRate > prev.successRate && curr.totalOperations >= 10) ? curr : prev, operatorStats[0]);
+      if (topPerformer.successRate >= 95 && topPerformer.totalOperations >= 10) {
+        recommendations.push(`[INFO] Top performer: ${topPerformer.fullName || topPerformer.username} with ${topPerformer.successRate.toFixed(1)}% success rate.`);
+      }
+    }
   }
 
   return recommendations;
@@ -642,18 +694,62 @@ function generateExecutiveSummary(
 
   const criticalCount = anomalies.filter(a => a.severity === 'CRITICAL').length;
   const highCount = anomalies.filter(a => a.severity === 'HIGH').length;
+  const mediumCount = anomalies.filter(a => a.severity === 'MEDIUM').length;
 
-  let summary = `Analysis Period: ${dateRange}\n\n`;
+  let summary = `=== EXECUTIVE SUMMARY ===\n\n`;
+  summary += `Analysis Period: ${dateRange}\n`;
+  summary += `Report Generated: ${new Date().toLocaleString()}\n\n`;
+  
+  summary += `--- KEY METRICS ---\n`;
   summary += `Total Operations: ${totalLogs.toLocaleString()}\n`;
   summary += `Active Operators: ${uniqueOperators}\n`;
-  summary += `Success Rate: ${successRate}%\n`;
-  summary += `Failure Rate: ${failureRate}%\n`;
-  summary += `Violations Detected: ${violationLogs}\n\n`;
+  summary += `Successful Operations: ${successLogs.toLocaleString()} (${successRate}%)\n`;
+  summary += `Failed Operations: ${failedLogs.toLocaleString()} (${failureRate}%)\n`;
+  summary += `Security Violations: ${violationLogs}\n\n`;
 
-  if (criticalCount > 0 || highCount > 0) {
-    summary += `ALERTS: ${criticalCount} Critical, ${highCount} High severity anomalies detected.\n`;
+  summary += `--- ANOMALY SUMMARY ---\n`;
+  summary += `Critical Alerts: ${criticalCount}\n`;
+  summary += `High Severity Alerts: ${highCount}\n`;
+  summary += `Medium Severity Alerts: ${mediumCount}\n`;
+  summary += `Total Anomalies: ${anomalies.length}\n\n`;
+
+  if (criticalCount > 0) {
+    summary += `!!! CRITICAL ALERTS DETECTED !!!\n`;
+    const criticalAnomalies = anomalies.filter(a => a.severity === 'CRITICAL');
+    criticalAnomalies.forEach((a, i) => {
+      summary += `  ${i + 1}. ${a.type.replace(/_/g, ' ')}: ${a.description}\n`;
+      summary += `     Operator: ${a.operatorUsername} | Time: ${new Date(a.timestamp).toLocaleString()}\n`;
+    });
+    summary += '\n';
+  }
+
+  if (highCount > 0) {
+    summary += `!! HIGH SEVERITY ALERTS !!\n`;
+    const highAnomalies = anomalies.filter(a => a.severity === 'HIGH');
+    highAnomalies.slice(0, 5).forEach((a, i) => {
+      summary += `  ${i + 1}. ${a.type.replace(/_/g, ' ')}: ${a.description}\n`;
+    });
+    if (highAnomalies.length > 5) {
+      summary += `  ... and ${highAnomalies.length - 5} more high severity alerts\n`;
+    }
+    summary += '\n';
+  }
+
+  if (violationLogs > 0) {
+    summary += `--- VIOLATION SUMMARY ---\n`;
+    summary += `${violationLogs} security violation(s) detected during the analysis period.\n`;
+    summary += `Immediate review and action recommended.\n\n`;
+  }
+
+  summary += `--- OVERALL STATUS ---\n`;
+  if (criticalCount > 0) {
+    summary += `Status: CRITICAL - Immediate investigation required!\n`;
+  } else if (highCount > 0 || violationLogs > 3) {
+    summary += `Status: WARNING - Review recommended\n`;
+  } else if (parseFloat(failureRate) > 10) {
+    summary += `Status: ATTENTION - High failure rate detected\n`;
   } else {
-    summary += `Status: Operations within normal parameters.\n`;
+    summary += `Status: NORMAL - Operations within acceptable parameters\n`;
   }
 
   return summary;
@@ -669,7 +765,7 @@ function escapeHtml(text: string): string {
 }
 
 export function generateHtmlReport(analysis: ComprehensiveAnalysis, systemName?: string): string {
-  const { overview, performanceMetrics, recommendations, executiveSummary, operatorStats, hourlyActivity, dailyActivity, anomalies, topErrors, sourceStats, ipStats } = analysis;
+  const { overview, performanceMetrics, recommendations, executiveSummary, operatorStats, operationStats, hourlyActivity, dailyActivity, anomalies, topErrors, sourceStats, ipStats } = analysis;
   const escapedSystemName = systemName ? escapeHtml(systemName) : null;
   const reportTitle = escapedSystemName ? `${escapedSystemName} - Log Analysis Report` : 'NMS Log Analysis Report';
   const dateRange = `${new Date(overview.dateRange.start).toLocaleDateString()} - ${new Date(overview.dateRange.end).toLocaleDateString()}`;
@@ -794,50 +890,149 @@ export function generateHtmlReport(analysis: ComprehensiveAnalysis, systemName?:
     <div class="card page-break">
       <h2>2. Operators - Detailed Statistics</h2>
       <p style="color: #94a3b8; margin-bottom: 20px;">${operatorStats.length} operators analyzed</p>
+      
+      ${operatorStats.slice(0, 30).map((op, idx) => `
+        <div style="background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
+            <div>
+              <h3 style="margin: 0 0 5px 0; color: #f8fafc;">${escapeHtml(op.fullName || op.username)}</h3>
+              ${op.fullName ? `<span style="color:#64748b;font-size:0.9em;">Username: ${escapeHtml(op.username)}</span>` : ''}
+            </div>
+            <div style="text-align: right;">
+              <span style="color:#64748b;font-size:0.85em;">Last Activity: </span>
+              <span style="color:#e2e8f0;">${op.lastActivity ? new Date(op.lastActivity).toLocaleString() : 'N/A'}</span>
+            </div>
+          </div>
+          
+          <!-- Stats Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 15px;">
+            <div style="background: #1e293b; padding: 12px; border-radius: 6px; text-align: center;">
+              <div style="font-size: 1.5em; font-weight: bold; color: #3b82f6;">${op.totalOperations.toLocaleString()}</div>
+              <div style="font-size: 0.8em; color: #94a3b8;">Total Operations</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 6px; text-align: center;">
+              <div style="font-size: 1.5em; font-weight: bold; color: #10b981;">${op.successfulOperations.toLocaleString()}</div>
+              <div style="font-size: 0.8em; color: #94a3b8;">Successful</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 6px; text-align: center;">
+              <div style="font-size: 1.5em; font-weight: bold; color: #ef4444;">${op.failedOperations}</div>
+              <div style="font-size: 0.8em; color: #94a3b8;">Failed</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 6px; text-align: center;">
+              <div style="font-size: 1.5em; font-weight: bold; color: ${op.successRate >= 90 ? '#10b981' : op.successRate >= 70 ? '#f59e0b' : '#ef4444'};">${op.successRate.toFixed(1)}%</div>
+              <div style="font-size: 0.8em; color: #94a3b8;">Success Rate</div>
+            </div>
+            <div style="background: #1e293b; padding: 12px; border-radius: 6px; text-align: center;">
+              <div style="font-size: 1.5em; font-weight: bold; color: #a855f7;">${op.violations}</div>
+              <div style="font-size: 0.8em; color: #94a3b8;">Violations</div>
+            </div>
+          </div>
+          
+          <!-- Active Hours -->
+          <div style="margin-bottom: 15px;">
+            <div style="font-size: 0.9em; color: #94a3b8; margin-bottom: 8px;">Active Hours:</div>
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+              ${op.activeHours.length > 0 ? op.activeHours.map(h => `<span class="badge badge-source">${h}:00</span>`).join('') : '<span style="color:#64748b">No activity recorded</span>'}
+            </div>
+          </div>
+          
+          <!-- Most Used Operations -->
+          <div style="margin-bottom: 15px;">
+            <div style="font-size: 0.9em; color: #94a3b8; margin-bottom: 8px;">Most Used Operations (Top 5):</div>
+            ${op.mostUsedOperations.length > 0 ? `
+              <table style="width: 100%; font-size: 0.85em;">
+                <thead><tr><th style="padding: 8px; text-align: left;">Operation</th><th style="padding: 8px; text-align: right;">Count</th></tr></thead>
+                <tbody>
+                  ${op.mostUsedOperations.slice(0, 5).map(m => `<tr><td style="padding: 6px 8px;">${escapeHtml(m.operation)}</td><td style="padding: 6px 8px; text-align: right;">${m.count}</td></tr>`).join('')}
+                </tbody>
+              </table>
+            ` : '<span style="color:#64748b">No operations recorded</span>'}
+          </div>
+          
+          <!-- Violation Details -->
+          ${op.violations > 0 && op.violationDetails && op.violationDetails.length > 0 ? `
+            <div style="margin-bottom: 15px;">
+              <div style="font-size: 0.9em; color: #ef4444; margin-bottom: 8px;">Violation Details:</div>
+              <table style="width: 100%; font-size: 0.85em; background: #1e1e2e; border-radius: 6px;">
+                <thead><tr>
+                  <th style="padding: 10px; text-align: left;">Type</th>
+                  <th style="padding: 10px; text-align: left;">Level</th>
+                  <th style="padding: 10px; text-align: left;">Operation</th>
+                  <th style="padding: 10px; text-align: left;">Timestamp</th>
+                  <th style="padding: 10px; text-align: left;">Details</th>
+                </tr></thead>
+                <tbody>
+                  ${op.violationDetails.map(v => `
+                    <tr style="border-bottom: 1px solid #334155;">
+                      <td style="padding: 8px;"><span class="badge badge-violation">${escapeHtml(v.type)}</span></td>
+                      <td style="padding: 8px;"><span class="badge ${v.level === 'Critical' ? 'badge-critical' : v.level === 'Major' ? 'badge-high' : 'badge-medium'}">${escapeHtml(v.level)}</span></td>
+                      <td style="padding: 8px; color: #e9d5ff; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(v.operation)}</td>
+                      <td style="padding: 8px; color: #94a3b8;">${new Date(v.timestamp).toLocaleString()}</td>
+                      <td style="padding: 8px; color: #cbd5e1; max-width: 250px; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(v.details)}">${escapeHtml(v.details.substring(0, 100))}${v.details.length > 100 ? '...' : ''}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+          
+          <!-- Failed Operation Details -->
+          ${op.failedOperations > 0 && op.failedOperationDetails && op.failedOperationDetails.length > 0 ? `
+            <div>
+              <div style="font-size: 0.9em; color: #f59e0b; margin-bottom: 8px;">Failed Operations Details:</div>
+              <table style="width: 100%; font-size: 0.85em; background: #1e1e2e; border-radius: 6px;">
+                <thead><tr>
+                  <th style="padding: 10px; text-align: left;">Operation</th>
+                  <th style="padding: 10px; text-align: left;">Source</th>
+                  <th style="padding: 10px; text-align: left;">Terminal IP</th>
+                  <th style="padding: 10px; text-align: left;">Timestamp</th>
+                  <th style="padding: 10px; text-align: left;">Details/ENDESC</th>
+                </tr></thead>
+                <tbody>
+                  ${op.failedOperationDetails.map(f => `
+                    <tr style="border-bottom: 1px solid #334155;">
+                      <td style="padding: 8px; color: #fecaca; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(f.operation)}</td>
+                      <td style="padding: 8px;"><span class="badge badge-source">${escapeHtml(f.source)}</span></td>
+                      <td style="padding: 8px; color: #94a3b8;">${escapeHtml(f.terminalIp)}</td>
+                      <td style="padding: 8px; color: #94a3b8;">${new Date(f.timestamp).toLocaleString()}</td>
+                      <td style="padding: 8px; color: #cbd5e1; max-width: 250px; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(f.details)}">${escapeHtml(f.details.substring(0, 100))}${f.details.length > 100 ? '...' : ''}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- SECTION 2.5: OPERATION STATS -->
+    <div class="card page-break">
+      <h2>2.5. Operations - Detailed Analysis</h2>
+      <p style="color: #94a3b8; margin-bottom: 20px;">${operationStats.length} unique operations analyzed</p>
+      
       <table>
         <thead>
           <tr>
-            <th>Operator</th>
-            <th>Total Ops</th>
-            <th>Success Rate</th>
+            <th>Operation</th>
+            <th>Total Count</th>
+            <th>Successful</th>
             <th>Failed</th>
-            <th>Failed Operations Details</th>
-            <th>Violations</th>
-            <th>Violation Details</th>
+            <th>Success Rate</th>
+            <th>Avg/Day</th>
+            <th>Operators Used</th>
           </tr>
         </thead>
         <tbody>
-          ${operatorStats.slice(0, 30).map(op => `
+          ${operationStats.slice(0, 50).map(op => `
             <tr>
-              <td><strong>${escapeHtml(op.fullName || op.username)}</strong>${op.fullName ? `<br><span style="color:#64748b;font-size:0.85em">${escapeHtml(op.username)}</span>` : ''}</td>
-              <td>${op.totalOperations.toLocaleString()}</td>
+              <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(op.operation)}">${escapeHtml(op.operation)}</td>
+              <td>${op.count.toLocaleString()}</td>
+              <td><span class="badge badge-success">${op.successCount}</span></td>
+              <td>${op.failCount > 0 ? `<span class="badge badge-failed">${op.failCount}</span>` : '<span style="color:#64748b">0</span>'}</td>
               <td><span class="badge ${op.successRate >= 90 ? 'badge-success' : op.successRate >= 70 ? 'badge-medium' : 'badge-failed'}">${op.successRate.toFixed(1)}%</span></td>
-              <td>${op.failedOperations > 0 ? `<span class="badge badge-failed">${op.failedOperations}</span>` : '<span style="color:#64748b">0</span>'}</td>
-              <td>${op.failedOperationDetails && op.failedOperationDetails.length > 0 ? `
-                <div class="detail-box">
-                  ${op.failedOperationDetails.slice(0, 3).map(f => `
-                    <div class="detail-item">
-                      <span class="badge badge-source">${escapeHtml(f.source)}</span> 
-                      <span style="color:#64748b">IP: ${escapeHtml(f.terminalIp)}</span><br>
-                      <span style="color:#fecaca">${escapeHtml(f.operation)}</span>
-                    </div>
-                  `).join('')}
-                  ${op.failedOperationDetails.length > 3 ? `<div style="color:#64748b;margin-top:5px">+${op.failedOperationDetails.length - 3} more...</div>` : ''}
-                </div>
-              ` : '<span style="color:#64748b">-</span>'}</td>
-              <td>${op.violations > 0 ? `<span class="badge badge-violation">${op.violations}</span>` : '<span style="color:#64748b">0</span>'}</td>
-              <td>${op.violationDetails && op.violationDetails.length > 0 ? `
-                <div class="detail-box">
-                  ${op.violationDetails.slice(0, 3).map(v => `
-                    <div class="detail-item">
-                      <span class="badge badge-source">${escapeHtml(v.type)}</span>
-                      <span class="badge ${v.level === 'Critical' ? 'badge-critical' : 'badge-medium'}">${escapeHtml(v.level)}</span><br>
-                      <span style="color:#e9d5ff">${escapeHtml(v.operation)}</span>
-                    </div>
-                  `).join('')}
-                  ${op.violationDetails.length > 3 ? `<div style="color:#64748b;margin-top:5px">+${op.violationDetails.length - 3} more...</div>` : ''}
-                </div>
-              ` : '<span style="color:#64748b">-</span>'}</td>
+              <td>${op.avgPerDay.toFixed(1)}</td>
+              <td style="font-size: 0.85em; color: #94a3b8;">${op.operators.slice(0, 3).join(', ')}${op.operators.length > 3 ? ` +${op.operators.length - 3} more` : ''}</td>
             </tr>
           `).join('')}
         </tbody>
