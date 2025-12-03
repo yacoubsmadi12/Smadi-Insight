@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import nodemailer from "nodemailer";
 import { storage } from "./storage";
 import { hashPassword, comparePassword, generateAccessToken, generateRefreshToken, verifyRefreshToken, authenticateToken } from "./auth";
 import { parseCSV, parseJSON, validateLogEntry } from "./services/logs";
@@ -1007,7 +1008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No valid log entries found in file" });
       }
 
-      const uniqueOperators = [...new Set(parsedLogs.map(l => l.operatorUsername))];
+      const uniqueOperators = Array.from(new Set(parsedLogs.map(l => l.operatorUsername)));
       for (const username of uniqueOperators) {
         const existingOperator = await storage.getOperatorByUsername(username, nmsSystemId);
         if (!existingOperator) {
@@ -1551,8 +1552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Simple validation - in production you would actually test the SMTP connection
-      // For now we just validate the settings format
+      // Validate port number
       const portNum = parseInt(String(testSettings.smtpPort));
       if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
         return res.status(400).json({ 
@@ -1570,14 +1570,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Success - settings are valid (without requiring credentials)
+      // Create nodemailer transporter and test connection
+      const transporterConfig: any = {
+        host: testSettings.smtpHost,
+        port: portNum,
+        secure: testSettings.enableSsl && portNum === 465, // true for 465, false for other ports
+        connectionTimeout: 10000, // 10 second timeout
+        greetingTimeout: 5000,
+      };
+      
+      // Add TLS options for non-465 ports when SSL is enabled
+      if (testSettings.enableSsl && portNum !== 465) {
+        transporterConfig.tls = {
+          rejectUnauthorized: false // Allow self-signed certificates
+        };
+      }
+      
+      // Add authentication if credentials provided
+      if (testSettings.smtpUser && testSettings.smtpPassword) {
+        transporterConfig.auth = {
+          user: testSettings.smtpUser,
+          pass: testSettings.smtpPassword
+        };
+      }
+      
+      const transporter = nodemailer.createTransport(transporterConfig);
+      
+      // Verify SMTP connection
+      await transporter.verify();
+      
+      // Success - connection verified
       const authInfo = testSettings.smtpUser ? "with authentication" : "without authentication";
       res.json({ 
-        message: `SMTP settings validated successfully (${authInfo}). Host: ${testSettings.smtpHost}:${testSettings.smtpPort}`, 
+        message: `SMTP connection successful (${authInfo}). Host: ${testSettings.smtpHost}:${portNum}`, 
         success: true 
       });
     } catch (error: any) {
-      res.status(500).json({ message: error.message, success: false });
+      // Provide helpful error messages based on error type
+      let errorMessage = error.message || "SMTP connection failed";
+      
+      if (error.code === 'ECONNREFUSED') {
+        errorMessage = `Connection refused - check if SMTP server is running on ${req.body.smtpHost}:${req.body.smtpPort}`;
+      } else if (error.code === 'ETIMEDOUT' || error.code === 'ESOCKET') {
+        errorMessage = `Connection timed out - verify host and port are correct`;
+      } else if (error.code === 'EAUTH' || error.responseCode === 535) {
+        errorMessage = `Authentication failed - check username and password`;
+      } else if (error.code === 'ENOTFOUND') {
+        errorMessage = `Host not found - verify SMTP host address: ${req.body.smtpHost}`;
+      } else if (error.code === 'CERT_HAS_EXPIRED' || error.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE') {
+        errorMessage = `SSL/TLS certificate error - try disabling SSL or contact your email provider`;
+      }
+      
+      res.status(400).json({ 
+        message: errorMessage, 
+        success: false,
+        errorCode: error.code || 'UNKNOWN'
+      });
     }
   });
 
