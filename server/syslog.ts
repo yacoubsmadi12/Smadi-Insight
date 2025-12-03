@@ -93,6 +93,17 @@ const CACHE_TTL = 60000;
 
 const ipLocks = new Map<string, Promise<NmsSystem | null>>();
 
+function isTimezoneOffset(str: string): boolean {
+  return /^[+-]\d{2}:\d{2}$/.test(str);
+}
+
+function isValidHostname(str: string): boolean {
+  if (!str || str === "unknown" || str === "-") return false;
+  if (isTimezoneOffset(str)) return false;
+  if (/^\d+$/.test(str)) return false;
+  return true;
+}
+
 function parseSyslogMessage(msg: string): ParsedSyslog {
   const rawMessage = msg.trim();
 
@@ -110,21 +121,44 @@ function parseSyslogMessage(msg: string): ParsedSyslog {
     message = rawMessage.substring(priMatch[0].length);
   }
 
+  const rfc5424WithSpaceTimezone = message.match(/^(\d)\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s*([+-]\d{2}:\d{2})\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.*)/);
+  if (rfc5424WithSpaceTimezone) {
+    const dateStr = rfc5424WithSpaceTimezone[2] + rfc5424WithSpaceTimezone[3];
+    timestamp = new Date(dateStr);
+    hostname = rfc5424WithSpaceTimezone[4];
+    message = rfc5424WithSpaceTimezone[8];
+  }
+
+  const rfc5424Match = message.match(/^(\d)\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.*)/);
+  if (rfc5424Match && hostname === "unknown") {
+    timestamp = new Date(rfc5424Match[2]);
+    const potentialHostname = rfc5424Match[3];
+    if (isValidHostname(potentialHostname)) {
+      hostname = potentialHostname;
+    }
+    message = rfc5424Match[7];
+  }
+
   const rfc3164Match = message.match(/^([A-Z][a-z]{2}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+(.*)/i);
-  if (rfc3164Match) {
+  if (rfc3164Match && hostname === "unknown") {
     const dateStr = rfc3164Match[1];
-    hostname = rfc3164Match[2];
+    const potentialHostname = rfc3164Match[2];
+    if (isValidHostname(potentialHostname)) {
+      hostname = potentialHostname;
+    }
     message = rfc3164Match[3];
     const now = new Date();
     const parsedDate = new Date(`${dateStr} ${now.getFullYear()}`);
     if (!isNaN(parsedDate.getTime())) timestamp = parsedDate;
   }
 
-  const rfc5424Match = message.match(/^(\d)\s+(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2}))\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(.*)/);
-  if (rfc5424Match) {
-    timestamp = new Date(rfc5424Match[2]);
-    hostname = rfc5424Match[3];
-    message = rfc5424Match[7];
+  if (!isValidHostname(hostname)) {
+    const hostnameFromMessage = message.match(/(?:hostname|host|server|device)[=:\s]+['"]?([a-zA-Z][a-zA-Z0-9._-]+)['"]?/i);
+    if (hostnameFromMessage) {
+      hostname = hostnameFromMessage[1];
+    } else {
+      hostname = "system";
+    }
   }
 
   return { facility, severity, timestamp, hostname, message, rawMessage };
