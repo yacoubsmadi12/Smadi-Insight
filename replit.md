@@ -163,10 +163,14 @@ export const db = drizzle(pool, { schema });
 - ✅ Back navigation arrows for improved UX
 
 ## Email Settings & Scheduled Reports (December 3, 2025)
-- Email server configuration with SMTP settings
-- TLS/SSL support with authentication
-- Scheduled reports (weekly/monthly/quarterly)
-- Admin email recipients management
+- ✅ Email server configuration with SMTP settings (nodemailer)
+- ✅ Real SMTP connection testing using nodemailer.createTransport().verify()
+- ✅ TLS/SSL support with authentication
+- ✅ Scheduled reports CRUD (weekly/monthly/quarterly frequencies)
+- ✅ Report types: violations, operations, summary, full
+- ✅ Field mapping: frontend `recipients` → backend `recipientEmails`
+- ✅ Admin email recipients management
+- ✅ Test data: 500 logs from 10 NMS sources, 184 violations, 75 failed operations
 
 ## Advanced Telecom Log Parser (December 3, 2025)
 - Multi-source parsing from 20+ NMS systems

@@ -85,11 +85,11 @@ interface ScheduledReport {
   id: string;
   name: string;
   frequency: string;
-  recipients: string;
+  recipientEmails: string;
   reportType: string;
   isActive: boolean;
-  lastRun: string | null;
-  nextRun: string | null;
+  lastSentAt: string | null;
+  nextScheduledAt: string | null;
   createdAt: string;
 }
 
@@ -578,12 +578,12 @@ export default function EmailSettingsPage() {
                               <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2 flex-wrap">
                                 <span className="flex items-center gap-1">
                                   <Mail className="w-3 h-3" />
-                                  {report.recipients.split(',').length} recipient(s)
+                                  {(report.recipientEmails || '').split(',').filter(e => e.trim()).length} recipient(s)
                                 </span>
-                                {report.lastRun && (
+                                {report.lastSentAt && (
                                   <span className="flex items-center gap-1">
                                     <Clock className="w-3 h-3" />
-                                    Last: {new Date(report.lastRun).toLocaleDateString()}
+                                    Last: {new Date(report.lastSentAt).toLocaleDateString()}
                                   </span>
                                 )}
                               </div>
@@ -609,7 +609,7 @@ export default function EmailSettingsPage() {
                                   reportForm.reset({
                                     name: report.name,
                                     frequency: report.frequency as any,
-                                    recipients: report.recipients,
+                                    recipients: report.recipientEmails,
                                     reportType: report.reportType as any,
                                     isActive: report.isActive,
                                   });
