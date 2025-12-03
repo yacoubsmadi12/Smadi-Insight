@@ -1613,11 +1613,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const transporter = nodemailer.createTransport(transporterConfig);
       
-      // Enable debug mode for troubleshooting
-      transporter.on('log', (log) => {
-        console.log(`[SMTP Debug] ${JSON.stringify(log)}`);
-      });
-      
       // Verify SMTP connection
       await transporter.verify();
       
@@ -1686,10 +1681,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Map frontend field names to database field names
       const reportData = {
         name: req.body.name,
+        emailSubject: req.body.emailSubject || null,
         recipientEmails: req.body.recipients || req.body.recipientEmails,
         frequency: req.body.frequency,
         reportType: req.body.reportType,
         nmsSystemId: req.body.nmsSystemId || null,
+        nmsSystemIds: req.body.nmsSystemIds || null,
         includeViolations: req.body.includeViolations ?? true,
         includeFailedOps: req.body.includeFailedOps ?? true,
         includeOperatorStats: req.body.includeOperatorStats ?? true,
@@ -1707,11 +1704,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Map frontend field names to database field names
       const updateData: any = {};
       if (req.body.name) updateData.name = req.body.name;
+      if (req.body.emailSubject !== undefined) updateData.emailSubject = req.body.emailSubject;
       if (req.body.recipients) updateData.recipientEmails = req.body.recipients;
       if (req.body.recipientEmails) updateData.recipientEmails = req.body.recipientEmails;
       if (req.body.frequency) updateData.frequency = req.body.frequency;
       if (req.body.reportType) updateData.reportType = req.body.reportType;
       if (req.body.nmsSystemId !== undefined) updateData.nmsSystemId = req.body.nmsSystemId;
+      if (req.body.nmsSystemIds !== undefined) updateData.nmsSystemIds = req.body.nmsSystemIds;
       if (req.body.includeViolations !== undefined) updateData.includeViolations = req.body.includeViolations;
       if (req.body.includeFailedOps !== undefined) updateData.includeFailedOps = req.body.includeFailedOps;
       if (req.body.includeOperatorStats !== undefined) updateData.includeOperatorStats = req.body.includeOperatorStats;
@@ -1721,6 +1720,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(report);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Send report now (for testing)
+  app.post("/api/scheduled-reports/:id/send-now", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const report = await storage.getScheduledReport(req.params.id);
+      if (!report) {
+        return res.status(404).json({ message: "Scheduled report not found", success: false });
+      }
+      
+      // Get email settings
+      const settings = await storage.getEmailSettings();
+      if (!settings) {
+        return res.status(400).json({ message: "Email settings not configured", success: false });
+      }
+      
+      // Create transporter
+      const os = await import('os');
+      const localHostname = os.hostname() || 'localhost';
+      
+      const transporterConfig: any = {
+        host: settings.smtpHost,
+        port: settings.smtpPort,
+        secure: settings.smtpSecure && settings.smtpPort === 465,
+        connectionTimeout: 30000,
+        greetingTimeout: 30000,
+        socketTimeout: 60000,
+        name: localHostname,
+        ignoreTLS: !settings.smtpSecure,
+        requireTLS: false,
+        opportunisticTLS: false,
+      };
+      
+      if (!settings.smtpSecure) {
+        transporterConfig.tls = { rejectUnauthorized: false };
+        transporterConfig.secure = false;
+      }
+      
+      if (settings.smtpUser && settings.smtpPassword) {
+        transporterConfig.auth = {
+          user: settings.smtpUser,
+          pass: settings.smtpPassword
+        };
+      }
+      
+      const transporter = nodemailer.createTransport(transporterConfig);
+      
+      // Generate report content
+      const reportDate = new Date().toLocaleDateString();
+      let subject = report.emailSubject || `[NMS Report] ${report.name}`;
+      subject = subject.replace('{date}', reportDate);
+      
+      // Get NMS systems for the report
+      let nmsSystemNames: string[] = [];
+      if (report.nmsSystemIds) {
+        const systemIds = report.nmsSystemIds.split(',').filter(id => id.trim());
+        for (const id of systemIds) {
+          const system = await storage.getNmsSystem(id);
+          if (system) {
+            nmsSystemNames.push(system.name);
+          }
+        }
+      }
+      
+      // Generate report HTML content
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+            .container { max-width: 800px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+            .header { background-color: #f59e0b; color: white; padding: 20px; border-radius: 8px 8px 0 0; margin: -30px -30px 30px -30px; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .section { margin-bottom: 20px; padding: 15px; background-color: #f9fafb; border-radius: 6px; }
+            .section-title { font-weight: bold; color: #374151; margin-bottom: 10px; }
+            .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+            .label { color: #6b7280; }
+            .value { font-weight: 500; color: #111827; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>${report.name}</h1>
+            </div>
+            
+            <div class="section">
+              <div class="section-title">Report Details</div>
+              <div class="info-row">
+                <span class="label">Report Type:</span>
+                <span class="value">${report.reportType}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Frequency:</span>
+                <span class="value">${report.frequency}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Generated:</span>
+                <span class="value">${new Date().toLocaleString()}</span>
+              </div>
+              ${nmsSystemNames.length > 0 ? `
+              <div class="info-row">
+                <span class="label">NMS Systems:</span>
+                <span class="value">${nmsSystemNames.join(', ')}</span>
+              </div>
+              ` : ''}
+            </div>
+            
+            <div class="section">
+              <div class="section-title">Summary</div>
+              <p>This is a test email sent from the NMS Log Analysis system. Your scheduled report "${report.name}" is configured and working correctly.</p>
+              <p>When the scheduled time arrives, this report will contain actual data from your NMS systems including violations, operations, and operator statistics.</p>
+            </div>
+            
+            <div class="footer">
+              <p>This email was sent by Tracer Logs NMS - Log Analysis & Monitoring System</p>
+              <p>Sent to: ${report.recipientEmails}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      // Parse recipients
+      const recipients = report.recipientEmails.split(',').map(e => e.trim()).filter(e => e);
+      
+      // Send email
+      const mailOptions = {
+        from: `"${settings.fromName || 'Tracer Logs System'}" <${settings.fromEmail}>`,
+        to: recipients.join(', '),
+        subject: subject,
+        html: htmlContent,
+      };
+      
+      await transporter.sendMail(mailOptions);
+      
+      // Update last sent timestamp
+      await storage.updateScheduledReport(req.params.id, {
+        lastSentAt: new Date(),
+      });
+      
+      res.json({ 
+        message: `Report email sent successfully to ${recipients.length} recipient(s)`, 
+        success: true 
+      });
+    } catch (error: any) {
+      console.error('[Send Now Error]', error);
+      res.status(500).json({ message: error.message, success: false });
     }
   });
 
