@@ -140,12 +140,12 @@ export default function EmailSettingsPage() {
     resolver: zodResolver(emailSettingsSchema),
     defaultValues: {
       smtpHost: emailSettings?.smtpHost || "",
-      smtpPort: emailSettings?.smtpPort || 587,
+      smtpPort: emailSettings?.smtpPort || 25,
       smtpUser: emailSettings?.smtpUser || "",
       smtpPassword: "",
       fromEmail: emailSettings?.fromEmail || "",
       fromName: emailSettings?.fromName || "NMS Log Analyzer",
-      enableSsl: emailSettings?.enableSsl ?? true,
+      enableSsl: emailSettings?.enableSsl ?? false,
     },
   });
 
@@ -356,9 +356,9 @@ export default function EmailSettingsPage() {
                             <FormControl>
                               <Input 
                                 type="number" 
-                                placeholder="587" 
+                                placeholder="25" 
                                 {...field}
-                                onChange={(e) => field.onChange(parseInt(e.target.value) || 587)}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 25)}
                                 data-testid="input-smtp-port"
                               />
                             </FormControl>
@@ -374,10 +374,10 @@ export default function EmailSettingsPage() {
                         name="smtpUser"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Username (Optional)</FormLabel>
                             <FormControl>
                               <Input 
-                                placeholder="user@example.com" 
+                                placeholder="Leave empty for no auth" 
                                 {...field} 
                                 data-testid="input-smtp-user"
                               />
@@ -391,11 +391,11 @@ export default function EmailSettingsPage() {
                         name="smtpPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Password (Optional)</FormLabel>
                             <FormControl>
                               <Input 
                                 type="password" 
-                                placeholder="********" 
+                                placeholder="Leave empty for no auth" 
                                 {...field} 
                                 data-testid="input-smtp-password"
                               />
