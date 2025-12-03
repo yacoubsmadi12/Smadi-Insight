@@ -110,9 +110,9 @@ export default function DashboardPage() {
   });
 
   const { data: violationsData } = useQuery<ViolationLog[]>({
-    queryKey: ["/api/nms-logs/violations"],
+    queryKey: ["/api/dashboard/violations"],
     queryFn: async () => {
-      const res = await apiCall("/api/nms-logs/violations");
+      const res = await apiCall("/api/dashboard/violations?limit=100");
       return res.json();
     },
     enabled: showViolationsDialog,

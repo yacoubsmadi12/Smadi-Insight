@@ -10,6 +10,7 @@ export default function Sidebar() {
     { path: "/nms-systems", icon: "fa-server", label: "NMS Systems" },
     { path: "/nms-logs", icon: "fa-list-alt", label: "NMS Logs" },
     { path: "/analysis-reports", icon: "fa-chart-bar", label: "Analysis Reports" },
+    { path: "/email-settings", icon: "fa-envelope", label: "Email & Reports" },
     { path: "/employees", icon: "fa-users", label: t("nav.employees") },
     { path: "/activity", icon: "fa-history", label: t("nav.activity") },
     { path: "/integration", icon: "fa-plug", label: t("nav.integration") },
