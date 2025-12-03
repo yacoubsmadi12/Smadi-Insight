@@ -1486,11 +1486,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/email-settings", authenticateToken, async (req: Request, res: Response) => {
     try {
       const existing = await storage.getEmailSettings();
+      
+      // Prepare the data to save
+      let dataToSave = { ...req.body };
+      
+      // If password is empty or masked (********), preserve the existing password
+      if (existing && (!dataToSave.smtpPassword || dataToSave.smtpPassword === '********' || dataToSave.smtpPassword === '')) {
+        dataToSave.smtpPassword = existing.smtpPassword;
+      }
+      
       if (existing) {
-        const updated = await storage.updateEmailSettings(existing.id, req.body);
+        const updated = await storage.updateEmailSettings(existing.id, dataToSave);
         res.json({ ...updated, smtpPassword: '********' });
       } else {
-        const created = await storage.createEmailSettings(req.body);
+        const created = await storage.createEmailSettings(dataToSave);
         res.json({ ...created, smtpPassword: '********' });
       }
     } catch (error: any) {
@@ -1792,7 +1801,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Generate report HTML content
+      // Generate analysis reports for each NMS system and create attachments
+      const attachments: Array<{ filename: string; content: string; contentType: string }> = [];
+      let totalLogs = 0;
+      let totalViolations = 0;
+      let totalFailed = 0;
+      
+      if (report.nmsSystemIds) {
+        const systemIds = report.nmsSystemIds.split(',').filter(id => id.trim());
+        for (const systemId of systemIds) {
+          try {
+            const system = await storage.getNmsSystem(systemId);
+            if (system) {
+              const logs = await storage.getNmsLogs({ nmsSystemId: systemId, limit: 50000 });
+              const operators = await storage.getOperators(systemId);
+              const groups = await storage.getOperatorGroups(systemId);
+              const managers = await storage.getManagers(systemId);
+              
+              if (logs.length > 0) {
+                const analysis = analyzeNmsLogs(logs, operators, groups, managers);
+                const htmlReport = generateHtmlReport(analysis, system.name);
+                
+                const sanitizedName = system.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 50);
+                attachments.push({
+                  filename: `analysis-report-${sanitizedName}.html`,
+                  content: htmlReport,
+                  contentType: 'text/html'
+                });
+                
+                totalLogs += analysis.overview.totalLogs;
+                totalViolations += analysis.overview.totalViolations;
+                totalFailed += logs.filter(l => l.result === 'Failed').length;
+              }
+            }
+          } catch (err) {
+            console.error(`Error generating report for system ${systemId}:`, err);
+          }
+        }
+      }
+      
+      // Generate email body content
       const htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -1807,6 +1855,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
             .label { color: #6b7280; }
             .value { font-weight: 500; color: #111827; }
+            .stat-box { display: inline-block; padding: 15px 25px; margin: 5px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; border-radius: 8px; text-align: center; }
+            .stat-number { font-size: 28px; font-weight: bold; display: block; }
+            .stat-label { font-size: 12px; opacity: 0.9; }
+            .warning { color: #dc2626; }
             .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; text-align: center; }
           </style>
         </head>
@@ -1814,6 +1866,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <div class="container">
             <div class="header">
               <h1>${report.name}</h1>
+            </div>
+            
+            <div class="section">
+              <div class="section-title">Report Summary</div>
+              <div style="text-align: center; padding: 20px 0;">
+                <div class="stat-box">
+                  <span class="stat-number">${totalLogs.toLocaleString()}</span>
+                  <span class="stat-label">Total Logs</span>
+                </div>
+                <div class="stat-box" style="background: ${totalViolations > 0 ? 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'};">
+                  <span class="stat-number">${totalViolations}</span>
+                  <span class="stat-label">Violations</span>
+                </div>
+                <div class="stat-box" style="background: ${totalFailed > 0 ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'};">
+                  <span class="stat-number">${totalFailed}</span>
+                  <span class="stat-label">Failed Operations</span>
+                </div>
+              </div>
             </div>
             
             <div class="section">
@@ -1836,13 +1906,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 <span class="value">${nmsSystemNames.join(', ')}</span>
               </div>
               ` : ''}
+              <div class="info-row">
+                <span class="label">Attachments:</span>
+                <span class="value">${attachments.length} HTML Report(s)</span>
+              </div>
             </div>
             
+            ${attachments.length > 0 ? `
             <div class="section">
-              <div class="section-title">Summary</div>
-              <p>This is a test email sent from the NMS Log Analysis system. Your scheduled report "${report.name}" is configured and working correctly.</p>
-              <p>When the scheduled time arrives, this report will contain actual data from your NMS systems including violations, operations, and operator statistics.</p>
+              <div class="section-title">Attached Reports</div>
+              <p>Please find the detailed analysis reports attached to this email:</p>
+              <ul>
+                ${attachments.map(a => `<li>${a.filename}</li>`).join('')}
+              </ul>
+              <p style="color: #6b7280; font-size: 12px;">Open the HTML files in any web browser to view the full analysis with charts and detailed statistics.</p>
             </div>
+            ` : `
+            <div class="section">
+              <div class="section-title">No Data Available</div>
+              <p>No logs were found for the selected NMS systems. Reports will be generated once log data is available.</p>
+            </div>
+            `}
             
             <div class="footer">
               <p>This email was sent by Tracer Logs NMS - Log Analysis & Monitoring System</p>
@@ -1856,13 +1940,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Parse recipients
       const recipients = report.recipientEmails.split(',').map(e => e.trim()).filter(e => e);
       
-      // Send email
-      const mailOptions = {
+      // Send email with attachments
+      const mailOptions: any = {
         from: `"${settings.fromName || 'Tracer Logs System'}" <${settings.fromEmail}>`,
         to: recipients.join(', '),
         subject: subject,
         html: htmlContent,
       };
+      
+      // Add attachments if any
+      if (attachments.length > 0) {
+        mailOptions.attachments = attachments.map(a => ({
+          filename: a.filename,
+          content: Buffer.from(a.content, 'utf-8'),
+          contentType: a.contentType,
+        }));
+      }
       
       await transporter.sendMail(mailOptions);
       
