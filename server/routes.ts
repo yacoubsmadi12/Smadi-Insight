@@ -1653,7 +1653,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/scheduled-reports", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const report = await storage.createScheduledReport(req.body);
+      // Map frontend field names to database field names
+      const reportData = {
+        name: req.body.name,
+        recipientEmails: req.body.recipients || req.body.recipientEmails,
+        frequency: req.body.frequency,
+        reportType: req.body.reportType,
+        nmsSystemId: req.body.nmsSystemId || null,
+        includeViolations: req.body.includeViolations ?? true,
+        includeFailedOps: req.body.includeFailedOps ?? true,
+        includeOperatorStats: req.body.includeOperatorStats ?? true,
+        isActive: req.body.isActive ?? true,
+      };
+      const report = await storage.createScheduledReport(reportData);
       res.json(report);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1662,7 +1674,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/scheduled-reports/:id", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const report = await storage.updateScheduledReport(req.params.id, req.body);
+      // Map frontend field names to database field names
+      const updateData: any = {};
+      if (req.body.name) updateData.name = req.body.name;
+      if (req.body.recipients) updateData.recipientEmails = req.body.recipients;
+      if (req.body.recipientEmails) updateData.recipientEmails = req.body.recipientEmails;
+      if (req.body.frequency) updateData.frequency = req.body.frequency;
+      if (req.body.reportType) updateData.reportType = req.body.reportType;
+      if (req.body.nmsSystemId !== undefined) updateData.nmsSystemId = req.body.nmsSystemId;
+      if (req.body.includeViolations !== undefined) updateData.includeViolations = req.body.includeViolations;
+      if (req.body.includeFailedOps !== undefined) updateData.includeFailedOps = req.body.includeFailedOps;
+      if (req.body.includeOperatorStats !== undefined) updateData.includeOperatorStats = req.body.includeOperatorStats;
+      if (req.body.isActive !== undefined) updateData.isActive = req.body.isActive;
+      
+      const report = await storage.updateScheduledReport(req.params.id, updateData);
       res.json(report);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
