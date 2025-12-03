@@ -1,6 +1,7 @@
 import { 
   users, employees, logs, reports, templates, 
   nmsSystems, managers, operatorGroups, operators, nmsLogs, analysisReports,
+  emailSettings, scheduledReports,
   type User, type InsertUser, type Employee, type InsertEmployee, 
   type Log, type InsertLog, type Report, type InsertReport, 
   type Template, type InsertTemplate,
@@ -9,7 +10,9 @@ import {
   type OperatorGroup, type InsertOperatorGroup,
   type Operator, type InsertOperator,
   type NmsLog, type InsertNmsLog,
-  type AnalysisReport, type InsertAnalysisReport
+  type AnalysisReport, type InsertAnalysisReport,
+  type EmailSettings, type InsertEmailSettings,
+  type ScheduledReport, type InsertScheduledReport
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gte, lte, like, or, sql, count } from "drizzle-orm";
@@ -186,6 +189,25 @@ export interface IStorage {
   // Database management methods
   clearAllNmsData(): Promise<{ nmsLogs: number; analysisReports: number; operators: number; operatorGroups: number; managers: number; nmsSystems: number }>;
   clearAllLegacyData(): Promise<{ logs: number; reports: number; employees: number }>;
+
+  // Email Settings methods
+  getEmailSettings(): Promise<EmailSettings | undefined>;
+  createEmailSettings(settings: InsertEmailSettings): Promise<EmailSettings>;
+  updateEmailSettings(id: string, settings: Partial<InsertEmailSettings>): Promise<EmailSettings>;
+  deleteEmailSettings(id: string): Promise<void>;
+
+  // Scheduled Reports methods
+  getScheduledReport(id: string): Promise<ScheduledReport | undefined>;
+  getScheduledReports(): Promise<ScheduledReport[]>;
+  getActiveScheduledReports(): Promise<ScheduledReport[]>;
+  createScheduledReport(report: InsertScheduledReport): Promise<ScheduledReport>;
+  updateScheduledReport(id: string, report: Partial<InsertScheduledReport>): Promise<ScheduledReport>;
+  deleteScheduledReport(id: string): Promise<void>;
+
+  // Dashboard stats with operator details
+  getViolationsWithOperators(limit?: number): Promise<NmsLog[]>;
+  getFailedOperationsWithOperators(limit?: number): Promise<NmsLog[]>;
+  getOperatorStats(): Promise<{ operator: string; total: number; successful: number; failed: number; violations: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -845,6 +867,104 @@ export class DatabaseStorage implements IStorage {
       reports: Number(reportsCount[0]?.count || 0),
       employees: Number(employeesCount[0]?.count || 0)
     };
+  }
+
+  // Email Settings methods
+  async getEmailSettings(): Promise<EmailSettings | undefined> {
+    const result = await db.select().from(emailSettings).limit(1);
+    return result[0] || undefined;
+  }
+
+  async createEmailSettings(settings: InsertEmailSettings): Promise<EmailSettings> {
+    const id = uuidv4();
+    await db.insert(emailSettings).values({ ...settings, id } as any);
+    const result = await db.select().from(emailSettings).where(eq(emailSettings.id, id));
+    return result[0];
+  }
+
+  async updateEmailSettings(id: string, updateData: Partial<InsertEmailSettings>): Promise<EmailSettings> {
+    await db.update(emailSettings).set({ ...updateData, updatedAt: new Date() } as any).where(eq(emailSettings.id, id));
+    const result = await db.select().from(emailSettings).where(eq(emailSettings.id, id));
+    return result[0];
+  }
+
+  async deleteEmailSettings(id: string): Promise<void> {
+    await db.delete(emailSettings).where(eq(emailSettings.id, id));
+  }
+
+  // Scheduled Reports methods
+  async getScheduledReport(id: string): Promise<ScheduledReport | undefined> {
+    const result = await db.select().from(scheduledReports).where(eq(scheduledReports.id, id));
+    return result[0] || undefined;
+  }
+
+  async getScheduledReports(): Promise<ScheduledReport[]> {
+    return db.select().from(scheduledReports).orderBy(desc(scheduledReports.createdAt));
+  }
+
+  async getActiveScheduledReports(): Promise<ScheduledReport[]> {
+    return db.select().from(scheduledReports).where(eq(scheduledReports.isActive, true)).orderBy(desc(scheduledReports.createdAt));
+  }
+
+  async createScheduledReport(report: InsertScheduledReport): Promise<ScheduledReport> {
+    const id = uuidv4();
+    await db.insert(scheduledReports).values({ ...report, id } as any);
+    const result = await db.select().from(scheduledReports).where(eq(scheduledReports.id, id));
+    return result[0];
+  }
+
+  async updateScheduledReport(id: string, updateData: Partial<InsertScheduledReport>): Promise<ScheduledReport> {
+    await db.update(scheduledReports).set(updateData as any).where(eq(scheduledReports.id, id));
+    const result = await db.select().from(scheduledReports).where(eq(scheduledReports.id, id));
+    return result[0];
+  }
+
+  async deleteScheduledReport(id: string): Promise<void> {
+    await db.delete(scheduledReports).where(eq(scheduledReports.id, id));
+  }
+
+  // Dashboard stats with operator details
+  async getViolationsWithOperators(limit: number = 50): Promise<NmsLog[]> {
+    return db.select()
+      .from(nmsLogs)
+      .where(eq(nmsLogs.isViolation, true))
+      .orderBy(desc(nmsLogs.timestamp))
+      .limit(limit);
+  }
+
+  async getFailedOperationsWithOperators(limit: number = 50): Promise<NmsLog[]> {
+    return db.select()
+      .from(nmsLogs)
+      .where(eq(nmsLogs.result, 'Failed'))
+      .orderBy(desc(nmsLogs.timestamp))
+      .limit(limit);
+  }
+
+  async getOperatorStats(): Promise<{ operator: string; total: number; successful: number; failed: number; violations: number }[]> {
+    const allLogs = await db.select().from(nmsLogs);
+    
+    const statsMap = new Map<string, { total: number; successful: number; failed: number; violations: number }>();
+    
+    for (const log of allLogs) {
+      const operator = log.operatorUsername;
+      if (!statsMap.has(operator)) {
+        statsMap.set(operator, { total: 0, successful: 0, failed: 0, violations: 0 });
+      }
+      const stats = statsMap.get(operator)!;
+      stats.total++;
+      if (log.result === 'Successful') {
+        stats.successful++;
+      } else {
+        stats.failed++;
+      }
+      if (log.isViolation) {
+        stats.violations++;
+      }
+    }
+    
+    return Array.from(statsMap.entries())
+      .map(([operator, stats]) => ({ operator, ...stats }))
+      .sort((a, b) => b.total - a.total);
   }
 }
 

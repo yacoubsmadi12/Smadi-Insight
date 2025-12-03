@@ -238,6 +238,36 @@ export const analysisReportsRelations = relations(analysisReports, ({ one }) => 
   }),
 }));
 
+export const emailSettings = pgTable("email_settings", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  smtpHost: text("smtp_host").notNull(),
+  smtpPort: integer("smtp_port").notNull().default(587),
+  smtpUser: text("smtp_user").notNull(),
+  smtpPassword: text("smtp_password").notNull(),
+  smtpSecure: boolean("smtp_secure").default(true),
+  fromEmail: text("from_email").notNull(),
+  fromName: text("from_name").default("Tracer Logs System"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const scheduledReports = pgTable("scheduled_reports", {
+  id: varchar("id", { length: 36 }).primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  recipientEmails: text("recipient_emails").notNull(),
+  frequency: text("frequency").notNull().default("weekly"),
+  reportType: text("report_type").notNull().default("summary"),
+  nmsSystemId: varchar("nms_system_id", { length: 36 }),
+  includeViolations: boolean("include_violations").default(true),
+  includeFailedOps: boolean("include_failed_ops").default(true),
+  includeOperatorStats: boolean("include_operator_stats").default(true),
+  lastSentAt: timestamp("last_sent_at"),
+  nextScheduledAt: timestamp("next_scheduled_at"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertEmployeeSchema = createInsertSchema(employees).omit({ id: true, createdAt: true });
 export const insertLogSchema = createInsertSchema(logs).omit({ id: true, createdAt: true });
@@ -249,6 +279,8 @@ export const insertOperatorGroupSchema = createInsertSchema(operatorGroups).omit
 export const insertOperatorSchema = createInsertSchema(operators).omit({ id: true, createdAt: true });
 export const insertNmsLogSchema = createInsertSchema(nmsLogs).omit({ id: true, createdAt: true });
 export const insertAnalysisReportSchema = createInsertSchema(analysisReports).omit({ id: true, createdAt: true });
+export const insertEmailSettingsSchema = createInsertSchema(emailSettings).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertScheduledReportSchema = createInsertSchema(scheduledReports).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -272,3 +304,7 @@ export type NmsLog = typeof nmsLogs.$inferSelect;
 export type InsertNmsLog = z.infer<typeof insertNmsLogSchema>;
 export type AnalysisReport = typeof analysisReports.$inferSelect;
 export type InsertAnalysisReport = z.infer<typeof insertAnalysisReportSchema>;
+export type EmailSettings = typeof emailSettings.$inferSelect;
+export type InsertEmailSettings = z.infer<typeof insertEmailSettingsSchema>;
+export type ScheduledReport = typeof scheduledReports.$inferSelect;
+export type InsertScheduledReport = z.infer<typeof insertScheduledReportSchema>;

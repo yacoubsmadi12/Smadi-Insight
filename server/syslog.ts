@@ -496,3 +496,81 @@ export async function simulateSyslogMessages(count: number, sources: string[] = 
     sources: sources.length
   };
 }
+
+import { generateRealisticTelecomLog, TELECOM_SOURCES, TelecomLogEntry } from "./telecom-log-parser";
+
+export async function simulateTelecomLogs(count: number, sourcesCount: number = 20): Promise<{
+  simulated: number;
+  duration: number;
+  logsPerSecond: number;
+  sources: number;
+  violations: number;
+  failed: number;
+}> {
+  const sources = TELECOM_SOURCES.slice(0, sourcesCount);
+  
+  console.log(`[telecom-sim] Starting telecom simulation: ${count} logs from ${sources.length} sources`);
+
+  const startTime = Date.now();
+  let simulated = 0;
+  let violations = 0;
+  let failed = 0;
+
+  for (let i = 0; i < count; i++) {
+    const sourceIndex = i % sources.length;
+    const source = sources[sourceIndex];
+    const entry = generateRealisticTelecomLog(sourceIndex);
+
+    if (entry.isViolation) violations++;
+    if (entry.result === 'Failed') failed++;
+
+    const nmsSystem = await getOrCreateNmsSystemForIp(source.ip);
+    if (!nmsSystem) continue;
+
+    const level = entry.level === 'Critical' ? 'Critical' : 
+                  entry.level === 'Major' ? 'Major' : 
+                  entry.level === 'Warning' ? 'Warning' : 'Minor';
+
+    const nmsLogData: InsertNmsLog = {
+      nmsSystemId: nmsSystem.id,
+      operatorUsername: entry.operator,
+      timestamp: entry.timestamp,
+      operation: entry.operation,
+      level,
+      source: entry.source,
+      terminalIp: entry.terminalIp,
+      operationObject: entry.operationObject,
+      result: entry.result,
+      details: entry.details,
+      isViolation: entry.isViolation,
+      violationType: entry.violationType
+    };
+
+    nmsLogBuffer.push(nmsLogData);
+
+    simulated++;
+
+    if (nmsLogBuffer.length >= BATCH_SIZE) {
+      await flushBuffers();
+    }
+
+    if (simulated % 500 === 0) {
+      console.log(`[telecom-sim] Progress: ${simulated}/${count} (${violations} violations, ${failed} failed)`);
+    }
+  }
+
+  await flushBuffers();
+
+  const duration = Date.now() - startTime;
+  console.log(`[telecom-sim] Completed: ${simulated} logs in ${duration}ms (${Math.round(simulated / (duration / 1000))} logs/sec)`);
+  console.log(`[telecom-sim] Stats: ${violations} violations, ${failed} failed operations`);
+
+  return {
+    simulated,
+    duration,
+    logsPerSecond: Math.round(simulated / (duration / 1000)),
+    sources: sources.length,
+    violations,
+    failed
+  };
+}

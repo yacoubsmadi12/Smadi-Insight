@@ -10,7 +10,7 @@ import { generateEmployeeReport } from "./services/gemini";
 import { parseHuaweiNmsLogs } from "./services/huaweiParser";
 import { analyzeOperatorLogs } from "./services/analysisEngine";
 import { analyzeNmsLogs, generateHtmlReport } from "./services/logAnalytics";
-import { getSyslogStats, simulateSyslogMessages } from "./syslog";
+import { getSyslogStats, simulateSyslogMessages, simulateTelecomLogs } from "./syslog";
 import { 
   insertEmployeeSchema, insertLogSchema, insertTemplateSchema,
   insertNmsSystemSchema, insertManagerSchema, insertOperatorGroupSchema,
@@ -1444,6 +1444,157 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: `Successfully simulated ${result.simulated} syslog messages`,
         ...result
       });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Telecom Logs Simulation - Generate realistic telecom NMS logs from 20 sources
+  app.post("/api/telecom/simulate", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { count = 500, sourcesCount = 20 } = req.body;
+      const maxCount = Math.min(count, 5000);
+      const maxSources = Math.min(sourcesCount, 20);
+      
+      const result = await simulateTelecomLogs(maxCount, maxSources);
+      
+      res.json({
+        message: `Successfully simulated ${result.simulated} telecom logs from ${result.sources} sources`,
+        ...result
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Email Settings Routes
+  app.get("/api/email-settings", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getEmailSettings();
+      if (settings) {
+        const safeSettings = { ...settings, smtpPassword: '********' };
+        res.json(safeSettings);
+      } else {
+        res.json(null);
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/email-settings", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const existing = await storage.getEmailSettings();
+      if (existing) {
+        const updated = await storage.updateEmailSettings(existing.id, req.body);
+        res.json({ ...updated, smtpPassword: '********' });
+      } else {
+        const created = await storage.createEmailSettings(req.body);
+        res.json({ ...created, smtpPassword: '********' });
+      }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/email-settings/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteEmailSettings(req.params.id);
+      res.json({ message: "Email settings deleted" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Test email connection
+  app.post("/api/email-settings/test", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getEmailSettings();
+      if (!settings) {
+        return res.status(400).json({ message: "Email settings not configured" });
+      }
+      res.json({ message: "Email settings are valid", success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message, success: false });
+    }
+  });
+
+  // Scheduled Reports Routes
+  app.get("/api/scheduled-reports", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const reports = await storage.getScheduledReports();
+      res.json(reports);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/scheduled-reports/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const report = await storage.getScheduledReport(req.params.id);
+      if (!report) {
+        return res.status(404).json({ message: "Scheduled report not found" });
+      }
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/scheduled-reports", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const report = await storage.createScheduledReport(req.body);
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/scheduled-reports/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const report = await storage.updateScheduledReport(req.params.id, req.body);
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/scheduled-reports/:id", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      await storage.deleteScheduledReport(req.params.id);
+      res.json({ message: "Scheduled report deleted" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Dashboard - Violations with Operator Details
+  app.get("/api/dashboard/violations", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const violations = await storage.getViolationsWithOperators(limit);
+      res.json(violations);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Dashboard - Failed Operations with Operator Details
+  app.get("/api/dashboard/failed-operations", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      const failedOps = await storage.getFailedOperationsWithOperators(limit);
+      res.json(failedOps);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Dashboard - Operator Statistics
+  app.get("/api/dashboard/operator-stats", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const operatorStats = await storage.getOperatorStats();
+      res.json(operatorStats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
