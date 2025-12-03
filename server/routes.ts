@@ -1754,9 +1754,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         opportunisticTLS: false,
       };
       
+      // Add TLS options - allow self-signed certificates
       if (!settings.smtpSecure) {
         transporterConfig.tls = { rejectUnauthorized: false };
         transporterConfig.secure = false;
+      } else if (settings.smtpSecure && settings.smtpPort !== 465) {
+        // For STARTTLS (ports like 25, 587), still allow self-signed certificates
+        transporterConfig.tls = { rejectUnauthorized: false };
+      } else {
+        // For port 465 (implicit TLS), also allow self-signed certificates
+        transporterConfig.tls = { rejectUnauthorized: false };
       }
       
       if (settings.smtpUser && settings.smtpPassword) {
