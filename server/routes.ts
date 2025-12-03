@@ -1470,6 +1470,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export Sample Logs - Get raw log samples for debugging parsing
+  app.get("/api/admin/export-sample-logs", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const nmsLogs = await storage.getNmsLogs({ limit: 10 });
+      const employees = await storage.getEmployees({});
+      
+      const sampleData = {
+        nmsLogs: nmsLogs.map(log => ({
+          id: log.id,
+          operatorUsername: log.operatorUsername,
+          operation: log.operation,
+          details: log.details,
+          source: log.source,
+          result: log.result,
+          timestamp: log.timestamp
+        })),
+        employees: employees.slice(0, 20).map(e => ({
+          id: e.id,
+          name: e.name,
+          email: e.email,
+          department: e.department
+        })),
+        stats: {
+          totalNmsLogs: nmsLogs.length,
+          totalEmployees: employees.length
+        }
+      };
+      
+      res.json(sampleData);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Clean Invalid Employees - Remove employees with timezone-like names
+  app.delete("/api/admin/cleanup-invalid-employees", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const employees = await storage.getEmployees({});
+      const invalidPatterns = [
+        /^[+-]\d{2}:\d{2}$/,  // Timezone offsets like +03:00, -03:00
+        /^system$/i,          // Generic system name
+        /^\d+$/,              // Just numbers
+        /^unknown$/i          // Unknown
+      ];
+      
+      const invalidEmployees = employees.filter(e => 
+        invalidPatterns.some(pattern => pattern.test(e.name))
+      );
+      
+      let deletedCount = 0;
+      for (const emp of invalidEmployees) {
+        try {
+          await storage.deleteEmployee(emp.id);
+          deletedCount++;
+        } catch (e) {
+          console.log(`Could not delete employee ${emp.id}: ${e}`);
+        }
+      }
+      
+      res.json({
+        message: `Cleaned up ${deletedCount} invalid employees`,
+        deleted: invalidEmployees.map(e => ({ id: e.id, name: e.name }))
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Email Settings Routes
   app.get("/api/email-settings", authenticateToken, async (req: Request, res: Response) => {
     try {
