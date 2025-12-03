@@ -1571,26 +1571,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create nodemailer transporter and test connection
+      // Get local hostname for EHLO command
+      const os = await import('os');
+      const localHostname = os.hostname() || 'localhost';
+      
       const transporterConfig: any = {
         host: testSettings.smtpHost,
         port: portNum,
         secure: testSettings.enableSsl && portNum === 465, // true for 465, false for other ports
         connectionTimeout: 30000, // 30 second timeout for connection
         greetingTimeout: 30000, // 30 second timeout for greeting
-        socketTimeout: 30000, // 30 second socket timeout
+        socketTimeout: 60000, // 60 second socket timeout
+        name: localHostname, // Hostname for EHLO/HELO command
         ignoreTLS: !testSettings.enableSsl, // Ignore TLS when SSL is disabled
         requireTLS: false, // Don't require TLS upgrade
+        opportunisticTLS: false, // Don't try to upgrade to TLS
       };
       
-      // Add TLS options
-      if (testSettings.enableSsl && portNum !== 465) {
-        transporterConfig.tls = {
-          rejectUnauthorized: false // Allow self-signed certificates
-        };
-      } else if (!testSettings.enableSsl) {
-        // For non-SSL connections, disable TLS completely
+      // Add TLS options - completely disable for non-SSL
+      if (!testSettings.enableSsl) {
         transporterConfig.tls = {
           rejectUnauthorized: false
+        };
+        transporterConfig.secure = false;
+      } else if (testSettings.enableSsl && portNum !== 465) {
+        transporterConfig.tls = {
+          rejectUnauthorized: false // Allow self-signed certificates
         };
       }
       
@@ -1602,9 +1608,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
       
-      console.log(`[SMTP Test] Connecting to ${testSettings.smtpHost}:${portNum} (SSL: ${testSettings.enableSsl}, Auth: ${!!testSettings.smtpUser})`);
+      console.log(`[SMTP Test] Connecting to ${testSettings.smtpHost}:${portNum} (SSL: ${testSettings.enableSsl}, Auth: ${!!testSettings.smtpUser}, Hostname: ${localHostname})`);
+      console.log(`[SMTP Test] Config:`, JSON.stringify(transporterConfig, null, 2));
       
       const transporter = nodemailer.createTransport(transporterConfig);
+      
+      // Enable debug mode for troubleshooting
+      transporter.on('log', (log) => {
+        console.log(`[SMTP Debug] ${JSON.stringify(log)}`);
+      });
       
       // Verify SMTP connection
       await transporter.verify();
