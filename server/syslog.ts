@@ -8,6 +8,13 @@ const SYSLOG_PORT = parseInt(process.env.SYSLOG_PORT || "514");
 const BATCH_SIZE = 50;
 const BATCH_INTERVAL_MS = 1000;
 
+const BLOCKED_OPERATORS = [
+  "kazema",
+  "IntegTeamAPIUser"
+];
+
+let blockedCount = 0;
+
 let nmsLogBuffer: InsertNmsLog[] = [];
 let legacyLogBuffer: InsertLog[] = [];
 let batchTimer: NodeJS.Timeout | null = null;
@@ -39,6 +46,8 @@ export function getSyslogStats() {
     totalReceived: stats.totalReceived,
     totalProcessed: stats.totalProcessed,
     totalErrors: stats.totalErrors,
+    totalBlocked: blockedCount,
+    blockedOperators: BLOCKED_OPERATORS,
     lastMinuteCount: stats.lastMinuteCount,
     sourcesCount: Object.fromEntries(stats.sourcesCount),
     uptime: Math.floor((Date.now() - stats.startTime.getTime()) / 1000),
@@ -426,6 +435,11 @@ async function processLog(msg: Buffer, rinfo: dgram.RemoteInfo) {
 
     const parsed = parseSyslogMessage(msg.toString());
     const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
+
+    if (BLOCKED_OPERATORS.includes(logDetails.operatorUsername)) {
+      blockedCount++;
+      return;
+    }
 
     const effectiveSourceIp = sourceIp;
 
