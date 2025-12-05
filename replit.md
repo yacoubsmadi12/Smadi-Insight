@@ -185,6 +185,45 @@ export const db = drizzle(pool, { schema });
 - Operator tracking with terminal IP addresses
 - Realistic log simulation for testing
 
+## NMS Source Configurations (December 5, 2025)
+The system now supports source-based parsing with per-source configurations:
+
+### Configured Sources:
+1. **NCE IP+T Huawei** - IPs: 10.119.19.70, 10.119.19.71, 10.119.19.72
+   - Blocked operators: kazema, IntegTeamAPIUser
+   - 147 users with role definitions
+   
+2. **NCE FAN Huawei** - IPs: 10.119.19.89, 10.119.19.87, 10.119.19.90
+   - Blocked operators: kazema, IntegTeamAPIUser
+   - Role-based violation detection
+   
+3. **Radio U2020 Huawei** - IP: 10.119.10.4
+   - MML commands treated as normal (except for read-only roles)
+   - Read-only roles: Guests, Performance, Monitoring Group, etc.
+   
+4. **Core U2020 Huawei** - IP: 10.253.124.169
+   - MML commands treated as normal (except for read-only roles)
+   - Same role structure as Radio U2020
+   
+5. **PRS Huawei** - IP: 10.119.10.104
+   - Statistics machine - all logs treated as normal
+   - No violation detection
+   
+6. **NetEco Huawei** - Manual upload source
+   - Role-based parsing for manual log uploads
+   - Read-only roles: Read only, TascTowers, Tasc-Towers-ObjectOriented
+
+### Violation Detection Logic:
+- Blocked operators are always flagged regardless of operation
+- Read-only roles performing write/MML operations trigger violations
+- User management operations require canManageUsers permission
+- Unknown roles are flagged as violations
+
+### Configuration Files:
+- `/server/source-configs/types.ts` - Shared type definitions
+- `/server/source-configs/index.ts` - Source config registry and violation detection
+- `/server/source-configs/*.ts` - Individual source configurations
+
 ## API Endpoints
 - `GET /api/dashboard/stats` - Enhanced dashboard statistics with hourly/daily activity
 - `GET /api/dashboard/violations` - List of violations with operator details

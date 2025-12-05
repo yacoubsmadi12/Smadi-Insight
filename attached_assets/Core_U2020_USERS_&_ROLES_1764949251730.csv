@@ -1,0 +1,51 @@
+﻿Role Name,Description
+Administrators,"	Has all rights except user management, query security log and view online users."
+Advace optmiz,for optimization team need
+Assurance User Group,For Assurance User Group
+CA Administrator Group,CA administrator group has operation rights on all functions of the Certificate Authority Service.
+CA Operator Group,"	Has the permission to view the CA, Certificate Profile, Function Management, and HSM Management pages, and the permission to perform operations on other pages."
+Configuration and DataBase,"	Users can create, configure and modify NEs , the also can intiate traces and export HW status"
+Core Group,System Maintenance Group
+CoreMaster,System Maintenance Group
+ECO Group,For ECO to send commands
+Guests,Guest User Group
+HOFS Group,System HOFS group
+Huawei_CO-UMPT,this group for Huawei users
+Huawei_Configuration and DataBase,contains 200 site for Huawei Remote support Team
+Huawei_Core_Team_Group,Huawei Core team
+Huawei_Team_Group,Huawei_Team_Group
+LST_OPTLOG_Group,This grou[p for users that can List Operation Log
+Limited_Operator_Core,for RAN users access to Core
+MW_Operation,MW users that need to ping and browse alarms only
+Maintenance & RAN,System Maintenance Group
+Maintenance Group,System Maintenance Group
+Maintenance_Team_Extra,Extra Commands for Maintenance Team
+Managers_And_TeamLeaders,Top Management
+Monitoring Group,System Monitoring Group
+NBI Admin Group,It has the permissions on operations and interface configurations for all management interfaces.
+NBI OpenAPI User Group,Has device-level operation rights for all objects and application-level operation rights for northbound open APIs.
+NBI User Group,Has permissions to perform operations on NBIs and configure interfaces on the web client.
+NBI_MML_Group,Autin User
+NFVOAccessRole,"	Has the right to use some northbound APIs, which is the role provided for NFVO to call northbound APIs."
+NOC Operators,Normal operator group
+NOC_Shift_Leaders,NOC ShiftLeaders
+NSSMFAccessRole,"	Has the right to use some northbound APIs, which is the role provided for NSSMF to call northbound APIs."
+Noc_operation_1,Copy of Maintenance system role
+Operator Group,System Operator Group
+Parlaiment,System Operator Group
+Performance,"	Users who need to see the stats , configuration and alarms of NE"
+Performance_monitor,Specail group for Performance monitoring access
+Planning,for Planning Team
+Power_Team,This group is trageting power team commands needed for battery manipulation
+SMManagers,"	Has permission to manage users, manage licenses, query security logs, view online users, and update ACL policies."
+TSGroup,System Operator Group
+TascTowers_Team,NOC
+TascTowers_Team_Extra,NOC
+The role to invoke southbound APIs,Indicates the role to invoke southbound APIs
+Third-party Application System Access Role,"	Has the right to use all northbound APIs, which is the role provided for Third-party Application System to call northbound APIs."
+UPRAccessRole,UPR interconnection role
+VAS Group,VAS Team
+VNFM User Group,Core IaaS Group
+VNFMAccessRole,"	Has the right to use all northbound APIs, which is the role provided for CSM to call northbound APIs."
+WebNIC User Group,For WebNIC User Group
+ntecoroles,connection between NetEco & U2020

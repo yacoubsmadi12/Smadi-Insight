@@ -1,0 +1,11 @@
+﻿Role Name,Description
+Access Control System Administrator,A role that has all access control management permissions.
+Access Control System Approver,A role that has the permission to approve applications and view application records.
+Access Control System Data Entry Operator,A role that has the permission to view and operate access user information and user groups.
+Administrators,"Has all rights except user management, query security log and view online users."
+Full Privilege,control evrey thing exept User mangment 
+NBI User Group,Only used for northbound interface users. It has the permissions on operations and interface configurations for all northbound interfaces.
+Read only,Read only
+SMManagers,"Has rights of user management, license management, query security log and view online users."
+Tasc-Towers-ObjectOriented,Read only
+TascTowers,Read only

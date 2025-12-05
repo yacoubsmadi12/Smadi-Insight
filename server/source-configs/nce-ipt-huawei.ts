@@ -1,19 +1,31 @@
-export interface SourceUser {
-  username: string;
-  fullName: string;
-  type: "Local user" | "Third-party user";
-  description: string;
-  roles: string[];
-  blocked: boolean;
-}
+import type { SourceConfig, SourceRole, SourceUser } from "./types";
 
-export interface SourceConfig {
-  name: string;
-  sourceIps: string[];
-  logFormat: string;
-  blockedOperators: string[];
-  users: SourceUser[];
-}
+export const NCE_IPT_ROLES: SourceRole[] = [
+  { name: "Administrators", description: "Full admin access", isReadOnly: false, isAdmin: true, canManageUsers: true },
+  { name: "SMManagers", description: "Security managers user group", isReadOnly: false, isAdmin: true, canManageUsers: true },
+  { name: "Maintenance Group", description: "System maintenance group", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Maintenance_1", description: "Maintenance level 1", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Maintenance_2", description: "Maintenance level 2", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Operator Group", description: "System operator group", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "NOC-Operator-Group", description: "NOC operator group", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "TNOC-Operator-Group", description: "TNOC operator group", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Transport", description: "Transport team", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Core", description: "Core team", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "BROADBAND", description: "Broadband team", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "BROADBAND-002", description: "Broadband team 2", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Performance", description: "Performance monitoring", isReadOnly: true, isAdmin: false, canManageUsers: false },
+  { name: "Guests", description: "Guest user group - read only", isReadOnly: true, isAdmin: false, canManageUsers: false },
+  { name: "Guest_2", description: "Guest user group 2 - read only", isReadOnly: true, isAdmin: false, canManageUsers: false },
+  { name: "GPON_Help_Desk", description: "GPON Help Desk", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "NBI User Group", description: "NBI User Group", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "The role to invoke southbound APIs", description: "Southbound API access", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Open Programmable Group", description: "Open Programmable Group", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "Huawei_Group_Tunnel", description: "Huawei tunnel access", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "MW Planning", description: "MW Planning team", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "MW_Planning&Enterprise_Solutions", description: "MW Planning & Enterprise Solutions", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "IP_Enterprise_Maintenance_Engineer", description: "IP Enterprise Maintenance", isReadOnly: false, isAdmin: false, canManageUsers: false },
+  { name: "FTTH_Planning_Implementation", description: "FTTH Planning Implementation", isReadOnly: false, isAdmin: false, canManageUsers: false },
+];
 
 export const NCE_IPT_HUAWEI_CONFIG: SourceConfig = {
   name: "NCE IP+T Huawei",
@@ -23,6 +35,13 @@ export const NCE_IPT_HUAWEI_CONFIG: SourceConfig = {
     "kazema",
     "IntegTeamAPIUser"
   ],
+  roles: NCE_IPT_ROLES,
+  parseRules: {
+    treatMmlAsNormal: false,
+    readOnlyRolesAreViolation: true,
+    treatAllAsNormal: false,
+    isManualUpload: false
+  },
   users: [
     { username: "admin", fullName: "Administrator", type: "Local user", description: "System administrator", roles: ["Administrators", "SMManagers"], blocked: false },
     { username: "AUTIN_T1", fullName: "", type: "Local user", description: "", roles: ["NBI User Group", "The role to invoke southbound APIs", "Open Programmable Group"], blocked: false },
@@ -172,7 +191,7 @@ export function isOperatorBlocked(config: SourceConfig, operatorUsername: string
 }
 
 export function getOperatorInfo(config: SourceConfig, operatorUsername: string): SourceUser | undefined {
-  return config.users.find(u => u.username === operatorUsername);
+  return config.users?.find(u => u.username === operatorUsername);
 }
 
 export function isSourceIpMatch(config: SourceConfig, sourceIp: string): boolean {
