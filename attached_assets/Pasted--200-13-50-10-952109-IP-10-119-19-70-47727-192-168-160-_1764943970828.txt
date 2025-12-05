@@ -1,0 +1,52 @@
+
+200 #
+13:50:10.952109 IP 10.119.19.70.47727 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E.....@.9.>.
+w.F...F.o......<12>Dec  5 10:50:12 -03:00 10.119.19.80 -: OperationLog%%30567058 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:13.259470 IP 10.119.19.71.58058 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E...\K@.9.f.
+w.G...F.......<<12>Dec  5 10:50:14 -03:00 10.119.19.80 -: OperationLog%%30567059 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:13.259470 IP 10.119.19.71.58058 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E...\L@.9.f.
+w.G...F.......;<12>Dec  5 10:50:15 -03:00 10.119.19.80 -: OperationLog%%30567060 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:15.381764 IP 10.119.19.72.58478 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E....L@.9.6.
+w.H...F.n......<12>Dec  5 10:50:17 -03:00 10.119.19.80 -: OperationLog%%30567061 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:17.247037 IP 10.119.19.71.40176 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E...]A@.9.e
+w.G...F........<12>Dec  5 10:50:19 -03:00 10.119.19.80 -: OperationLog%%30567062 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:19.342053 IP 10.119.19.70.54114 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E....e@.9.<.
+w.F...F.b......<12>Dec  5 10:50:22 -03:00 10.119.19.80 -: OperationLog%%30567064 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:19.342053 IP 10.119.19.70.54114 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E....d@.9.<.
+w.F...F.b......<12>Dec  5 10:50:20 -03:00 10.119.19.80 -: OperationLog%%30567063 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:23.469527 IP 10.119.19.71.54654 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E...a.@.9.`X
+w.G...F.~......<12>Dec  5 10:50:23 -03:00 10.119.19.80 -: OperationLog%%30567065 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:23.469527 IP 10.119.19.71.54654 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E...a.@.9.`W
+w.G...F.~......<12>Dec  5 10:50:25 -03:00 10.119.19.80 -: OperationLog%%30567066 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
+13:50:25.555145 IP 10.119.19.72.51472 > 192.168.160.70.514: SYSLOG user.warning, length: 214
+E.....@.9.5.
+w.H...F........<12>Dec  5 10:50:27 -03:00 10.119.19.80 -: OperationLog%%30567067 # MINOR # apimaintuser001 # NBINotifyService # Query alarms # Alarm # Success # GET /restconf/v1/data/ietf-alarms:alarms/alarm-list
+response:
+200 #
