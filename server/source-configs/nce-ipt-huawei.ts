@@ -1,0 +1,180 @@
+export interface SourceUser {
+  username: string;
+  fullName: string;
+  type: "Local user" | "Third-party user";
+  description: string;
+  roles: string[];
+  blocked: boolean;
+}
+
+export interface SourceConfig {
+  name: string;
+  sourceIps: string[];
+  logFormat: string;
+  blockedOperators: string[];
+  users: SourceUser[];
+}
+
+export const NCE_IPT_HUAWEI_CONFIG: SourceConfig = {
+  name: "NCE IP+T Huawei",
+  sourceIps: ["10.119.19.70", "10.119.19.71", "10.119.19.72"],
+  logFormat: "huawei_nms",
+  blockedOperators: [
+    "kazema",
+    "IntegTeamAPIUser"
+  ],
+  users: [
+    { username: "admin", fullName: "Administrator", type: "Local user", description: "System administrator", roles: ["Administrators", "SMManagers"], blocked: false },
+    { username: "AUTIN_T1", fullName: "", type: "Local user", description: "", roles: ["NBI User Group", "The role to invoke southbound APIs", "Open Programmable Group"], blocked: false },
+    { username: "Abdallah.Alkhatib", fullName: "Abdallah.Alkhatib", type: "Local user", description: "Abdallah.Alkhatib@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "IP_Enterprise_Maintenance_Engineer"], blocked: false },
+    { username: "Abdelaziz.alnaser", fullName: "Abdelaziz.alnaser", type: "Local user", description: "Abdelaziz.alnaser@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "Abdullah.Abu-Karaki", fullName: "Abdullah Abu-Karaki", type: "Local user", description: "Abdullah Abu-Karaki@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "Abdulrahman.Osaili", fullName: "Abdulrahman Osaili", type: "Local user", description: "Abdulrahman.Osaili@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "Abedalkarem.BaniHani", fullName: "Abedalkarem Bani Hani", type: "Local user", description: "Abedalkarem.BaniHani@mada.jo", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "IP_Enterprise_Maintenance_Engineer"], blocked: false },
+    { username: "Ahmad.Ismail", fullName: "Ahmad Ismail", type: "Local user", description: "Ahmad.Ismail@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Performance", "Maintenance_1"], blocked: false },
+    { username: "Alaa.Antari", fullName: "Alaa.Antari@jo.zain.com", type: "Local user", description: "", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false },
+    { username: "Amjad.lahlooh", fullName: "Amjad lahlooh", type: "Local user", description: "", roles: ["NOC-Operator-Group"], blocked: false },
+    { username: "Azkhan.AlHissami", fullName: "Azkhan AlHissami", type: "Local user", description: "Azkhan.AlHissami@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "Dala.Abbadi", fullName: "Dala.Abbadi", type: "Local user", description: "", roles: ["Maintenance Group", "Maintenance_1"], blocked: false },
+    { username: "Dania.Nofal", fullName: "Dania.Nofal", type: "Local user", description: "commertial support", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "Fakher.AlBoukhari", fullName: "Fakher AlBoukhari", type: "Local user", description: "Fakher.AlBoukhari@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "Ghaith.Ali", fullName: "Ghaith Ali", type: "Local user", description: "Huawei Support", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group"], blocked: false },
+    { username: "Gongchan", fullName: "Gongchan", type: "Local user", description: "Gongchan@huawei.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "Husni.Yousef", fullName: "Husni.Yousef@jo.zain.com", type: "Local user", description: "", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "IntegTeamAPIUser", fullName: "IntegTeamAPIUser", type: "Third-party user", description: "IntegTeamAPIUser@jo.zain.com", roles: ["NBI User Group", "The role to invoke southbound APIs", "Guests", "Guest_2"], blocked: true },
+    { username: "Khalid.Kokh", fullName: "Khalid Kokh", type: "Local user", description: "Transmission Engineer", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "Laith.Farrayeh", fullName: "Laith Farrayeh", type: "Local user", description: "Radio NOC", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "Maen.mah", fullName: "Maen.mah", type: "Local user", description: "Maen.AlMahadeen@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "Maher.AbuShawish", fullName: "Maher AbuShawish@jo.zain.com", type: "Local user", description: "Customer Care", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "Majed.AlAssaf", fullName: "Majed.AlAssaf", type: "Local user", description: "Majed.AlAssaf@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "Malek.AlShehab", fullName: "Malek AlShehab", type: "Local user", description: "Malek.AlShehab@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "Mohammad.AlBakri", fullName: "Mohammad AlBakri", type: "Local user", description: "Noc", roles: ["NOC-Operator-Group"], blocked: false },
+    { username: "Mohammad.Alhares", fullName: "Mohammad Alhares", type: "Local user", description: "Mohammad.Alhares@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "Mohammadaw", fullName: "Mohammad Al-awamleh", type: "Local user", description: "Mohammad.Al-awamleh@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1"], blocked: false },
+    { username: "Mohammed.AbuSbeitan", fullName: "Mohammed.AbuSbeitan", type: "Local user", description: "Mohammed.AbuSbeitan@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "MohmdAli", fullName: "Mohammad Ali", type: "Local user", description: "Mohammad.Ali@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "Morad.jankhout", fullName: "Morad jankhout", type: "Local user", description: "Morad.jankhout@jo.zain.com", roles: ["Administrators", "Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW Planning", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "Mouyyad.Jumah", fullName: "Mouyyad.Jumah", type: "Local user", description: "TNOC-Team", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "Muhammad.Shehriyar", fullName: "muhammad.shehriyar1", type: "Local user", description: "muhammad.shehriyar1@huawei-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "Mustafa.Sfaira", fullName: "Mustafa.Sfaira@jo.zain.com", type: "Local user", description: "", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "Mustafaall", fullName: "Mustafa Allahham", type: "Local user", description: "", roles: ["Core"], blocked: false },
+    { username: "Nooraldeen.Abdallah", fullName: "Nooraldeen Abdallah", type: "Local user", description: "Transmission maintenance (intern, guest role)", roles: ["Guests"], blocked: false },
+    { username: "Qutaiba.Hliel", fullName: "Qutaiba Hliel", type: "Local user", description: "Qutaiba.Hliel @jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "Saifaldean.AlDabiek", fullName: "Saifaldean AlDabiek", type: "Local user", description: "Saifaldean AlDabiek@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "IP_Enterprise_Maintenance_Engineer"], blocked: false },
+    { username: "Super_test", fullName: "", type: "Third-party user", description: "", roles: ["NBI User Group"], blocked: false },
+    { username: "Taher.AlTaha", fullName: "Taher.AlTaha", type: "Local user", description: "Taher.AlTaha@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "Tamim.alMajali", fullName: "Tamim alMajali", type: "Local user", description: "Customer Care", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "Tariq.AlHur", fullName: "Tariq AlHur", type: "Local user", description: "Tariq.AlHur@jo.zain.com", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false },
+    { username: "Tariq.Sulaiman", fullName: "Tariq Sulaiman", type: "Local user", description: "Tariq.Sulaiman@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "Transmission.RPA", fullName: "Transmission  Team", type: "Local user", description: "For Mr.mohammad ibrahem using for RPA", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "IP_Enterprise_Maintenance_Engineer"], blocked: false },
+    { username: "Yahya.abualrish", fullName: "Yahya.abualrish", type: "Local user", description: "Yahya.abualrish@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND", "Transport", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "abd.mater", fullName: "Abdelrahman Abumater", type: "Local user", description: "abdelrahman.abumater@jo.zain.com", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false },
+    { username: "abdallah.atieh", fullName: "Abdallah Atieh", type: "Local user", description: "Abdallah.Atieh@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "abdallah.oran", fullName: "abdallah oran", type: "Local user", description: "Transmission Engineer Network", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "abdelkareem.nasrallah", fullName: "abdelkareem nasrallah", type: "Local user", description: "", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "abdelrahman.altayeh", fullName: "abdelrahman altayeh", type: "Local user", description: "abdelrahman.altayeh@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "abdullahs", fullName: "Abdullah Seyam", type: "Local user", description: "Abdullah.Seyam@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "adnan.alhorani", fullName: "Adnan ALHorani", type: "Local user", description: "Adnan.ALHorani@jo.zain.com", roles: ["Guests", "Guest_2"], blocked: false },
+    { username: "afaq.ahmad1", fullName: "afaq.ahmad", type: "Local user", description: "afaq.ahmad1@huawei-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "ahmad.abuobaid", fullName: "Ahmad AbuObaid", type: "Local user", description: "Ahmad.AbuObaid@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "ahmad.alkhatib", fullName: "Ahmad Alkhatib", type: "Local user", description: "ahmad.alkhatib@jo.zain.com", roles: ["NBI User Group", "Transport", "Maintenance_1", "MW Planning", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "ahmad.hudban", fullName: "Ahmad Al Hudban", type: "Local user", description: "Ahmad.Alhudban@jo.zain.com", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "ahmad.marashdeh", fullName: "ahmad marashdeh", type: "Local user", description: "ahmad.marashdeh", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "ahmad.nabas", fullName: "Ahmad Nabas", type: "Local user", description: "ahmad.nabas@jo.zain.com", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false },
+    { username: "ahmad.waleed", fullName: "Ahmad Waleed", type: "Local user", description: "ahmad.waleed.elbess@huawei-partners.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND", "Transport", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "ahmad.zalat", fullName: "Ahmad Zalat", type: "Local user", description: "Ahmad.Zalat@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "IP_Enterprise_Maintenance_Engineer"], blocked: false },
+    { username: "ahmadat", fullName: "Ahmad Al-Attar", type: "Local user", description: "Ahmad.Al-Attar@jo.zain.com", roles: ["Administrators", "Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "ahmaddi", fullName: "Ahmed Diab", type: "Local user", description: "ahmed.diab@jo.zain.com", roles: ["Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "akram.elturk", fullName: "akram elturk", type: "Local user", description: "MW Planning & Transmission Implementation Team Member", roles: ["NBI User Group", "Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW Planning", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "alaa.mufleh", fullName: "alaa mufleh", type: "Local user", description: "alaa.mufleh@jo.zain.com", roles: ["Guests", "Guest_2"], blocked: false },
+    { username: "alaa.sara1", fullName: "alaa abu sara", type: "Local user", description: "alaa.abu.sara1@h-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "anas.alamarneh", fullName: "Anas Amarneh", type: "Local user", description: "anas.alamarneh@jo.zain.com", roles: ["Guests"], blocked: false },
+    { username: "anas.quzmar1", fullName: "anas quzmar1", type: "Local user", description: "huawei-team", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "anas.sabbah", fullName: "Anas Sabbah", type: "Local user", description: "Anas.Sabbah@jo.zain.com, for query only", roles: ["Guests", "Guest_2"], blocked: false },
+    { username: "apimaintuser001", fullName: "Ahmad Al Khatib user for API applications", type: "Third-party user", description: "ahmad.alkhatib@jo.zain.com", roles: ["NBI User Group", "Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "ata.zaben", fullName: "Ata Zaben", type: "Local user", description: "Ata.Zaben@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "autinftth", fullName: "Autin_FTTH", type: "Third-party user", description: "", roles: ["NBI User Group", "The role to invoke southbound APIs", "Open Programmable Group"], blocked: false },
+    { username: "autinuser", fullName: "autin user", type: "Third-party user", description: "Autin Umberela System User", roles: ["NBI User Group", "The role to invoke southbound APIs"], blocked: false },
+    { username: "bara.alkharma", fullName: "Bara  Al Kharma", type: "Local user", description: "Bara.AlKharma@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "bashar.mohammad", fullName: "bashar mohammad", type: "Local user", description: "bashar.mohammad.alhaj@huawei-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "bashar.sallam", fullName: "Bashar Sallam", type: "Local user", description: "bashar.sallam@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "ehab.suleiman", fullName: "ehab suleiman", type: "Local user", description: "ehab.suleiman@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "enas.hersh", fullName: "Enas Hersh", type: "Local user", description: "enas.hersh@jo.zain.com", roles: ["Maintenance Group", "FTTH_Planning_Implementation"], blocked: false },
+    { username: "faisal.ersan", fullName: "Faisal Ersan", type: "Local user", description: "faisal.ersan@jo.zain.com", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "fengshuxuan2", fullName: "fengshuxuan", type: "Local user", description: "Huawei_Team_Yahya abo reish", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "fikri.alloubani", fullName: "Fikri Alloubani", type: "Local user", description: "Fikri.Alloubani@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "hamas.jubran", fullName: "Hamas Jubran", type: "Local user", description: "Hamas.Jubran@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "hamza.al-rajabi", fullName: "Hamza Al-Rajabi", type: "Local user", description: "Hamza.Al-Rajabi@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1"], blocked: false },
+    { username: "hamza.zubaidi", fullName: "hamza zubaidi", type: "Local user", description: "Team huawei", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "haseeb.iftikhar", fullName: "haseeb iftikhar", type: "Local user", description: "Team huawei", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "helal.alotaibi", fullName: "Helal AlOtaibi", type: "Local user", description: "", roles: ["NOC-Operator-Group"], blocked: false },
+    { username: "husam.barjawi", fullName: "Husam Barjawi", type: "Local user", description: "Husam.Barjawi@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Performance", "Maintenance_1"], blocked: false },
+    { username: "hussam.juneidy", fullName: "hussam juneidy", type: "Local user", description: "hussam.al.juneidy@h-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "ibrahim.tarawneh", fullName: "ibrahim tarawneh", type: "Local user", description: "ibrahim.tarawneh@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "kazema", fullName: "Kazem AlAssaf (IMPORTANT ACCOUNT)", type: "Local user", description: "IMPORTANT ACCOUNT for GPON XML Interface", roles: ["NBI User Group"], blocked: true },
+    { username: "lana.alkhatib", fullName: "Lana Al Khatib", type: "Local user", description: "FTTH Activation Engineer", roles: ["Maintenance Group", "FTTH_Planning_Implementation"], blocked: false },
+    { username: "liuqingbo", fullName: "liuqingbo", type: "Local user", description: "liuqingbo2@huawei.com", roles: ["Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "majd.mohammad", fullName: "majd mohammad", type: "Local user", description: "Team huawei", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group"], blocked: false },
+    { username: "majid.fida1", fullName: "majid.fida1", type: "Local user", description: "Huawei_Team_Yahya abo reish", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "malwedyan", fullName: "malwedyan", type: "Local user", description: "Core Team", roles: ["Core"], blocked: false },
+    { username: "marwan.kanaan", fullName: "Marwan Kanaan", type: "Local user", description: "Transmission Engineer Network", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "mbadarneh", fullName: "mohammad badarneh", type: "Local user", description: "core_team", roles: ["Core"], blocked: false },
+    { username: "moath.ahmad", fullName: "Moath Ahmad", type: "Local user", description: "IP & Enterprise Maintenance", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "IP_Enterprise_Maintenance_Engineer"], blocked: false },
+    { username: "mohammad.abdallah", fullName: "Mohammad Abdallah", type: "Local user", description: "Enterprise & Home Internet Complaints", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "mohammad.ibrahem", fullName: "Mohammad Ibrahem", type: "Local user", description: "Transmission Engineer Network", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "mohammad.kashkoul", fullName: "Mohammad Kashkoul", type: "Local user", description: "Mohammad.Kashkoul@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "mohammad.khaleel", fullName: "Mohammad Khaleel", type: "Local user", description: "Mohammad.Khaleel@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "mohammad.marar", fullName: "mohammad marar", type: "Local user", description: "mohammad.marar@jo.zain.com", roles: ["Guests"], blocked: false },
+    { username: "mohammad.omar", fullName: "mohammad omar", type: "Local user", description: "mohammad.omar2@h-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "mohammad.rababaa", fullName: "Mohammad  Rababaa", type: "Local user", description: "Mohammad.Rababaa@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "BROADBAND-002", "Maintenance_1"], blocked: false },
+    { username: "mohammed.f", fullName: "mohammed faide", type: "Local user", description: "mohammed faide@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "mohd.aburyash", fullName: "mohd.aburyash", type: "Local user", description: "mohd.aburyash", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "mohd.banihamad", fullName: "Mohammad Bani-Hamad", type: "Local user", description: "Mohammad Bani-Hamad@jo.zain.com", roles: ["GPON_Help_Desk"], blocked: false },
+    { username: "mohd.elawa", fullName: "Mohammad Elawa", type: "Local user", description: "mohammad.elawa@jo.zain.com", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false },
+    { username: "mohd.samour", fullName: "mohammed samour", type: "Local user", description: "mohammed.samour@jo.zain.com", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "mosab.smadi", fullName: "Mosab Smadi", type: "Local user", description: "mosab.smadi@jo.zain.com", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false },
+    { username: "mousa.m.abualtayeb", fullName: "mousa.m.abualtayeb", type: "Local user", description: "mousa.m.abualtayeb @jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "muhammad.abdul", fullName: "muhammad.abdul", type: "Local user", description: "Huawei_Team_Yahya abo reish", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "muhammad.ijaz2", fullName: "muhammad ijaz", type: "Local user", description: "muhammad.ijaz2@huawei.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group"], blocked: false },
+    { username: "muhammad.komail1", fullName: "muhammad komail", type: "Local user", description: "Team huawei", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "muhammad.yasir", fullName: "muhammad yasir", type: "Local user", description: "Huawei_Team_Yahya abo reish", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "naser.nazal", fullName: "Naser Nazal", type: "Local user", description: "naser.nazal@jo.zain.com", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "nasir.jameel", fullName: "Nasir Jameel", type: "Local user", description: "nasir.jameel@huawei-partners.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "nbiuser_zain", fullName: "", type: "Third-party user", description: "Changeme_12#", roles: ["NBI User Group"], blocked: false },
+    { username: "nehad.shorbaji", fullName: "nehad shorbaji", type: "Local user", description: "nehad.shorbaji@jo.zain.com", roles: ["Operator Group"], blocked: false },
+    { username: "obaida.m", fullName: "Obaida Masarweh", type: "Local user", description: "Obaida Masarweh@huawei.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "obaida.m.q", fullName: "Obaida Masarweh", type: "Local user", description: "Obaida Masarweh@huawei.com", roles: ["Huawei_Group_Tunnel"], blocked: false },
+    { username: "oday.sha", fullName: "Oday AlShawabkah", type: "Local user", description: "Oday.AlShawabkah@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "osaid.bolbol", fullName: "osaid bolbol", type: "Local user", description: "osaid.bolbol@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "qualityrpa", fullName: "RPA Developer", type: "Third-party user", description: "RPA Developer API USER", roles: ["NBI User Group", "The role to invoke southbound APIs", "Open Programmable Group"], blocked: false },
+    { username: "qusai.dayeh", fullName: "qusai.dayeh@jo.zain.com", type: "Local user", description: "", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "raad.a", fullName: "raad abudayeh", type: "Local user", description: "raad.abudayeh@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "raad.qandah", fullName: "Raad Qandah", type: "Local user", description: "raad.qandah@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Performance", "Maintenance_1"], blocked: false },
+    { username: "rayan.fanatseh", fullName: "rayan.fanatseh", type: "Local user", description: "", roles: ["Operator Group", "NOC-Operator-Group"], blocked: false },
+    { username: "saddamta", fullName: "Saddam AlTamimi", type: "Local user", description: "Saddam.AlTamimi@jo.zain.com", roles: ["Transport", "MW Planning"], blocked: false },
+    { username: "saja.aldabes", fullName: "saja aldabes", type: "Local user", description: "saja.aldabes@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "saleem.ullah", fullName: "saleem ullah", type: "Local user", description: "saleem.ullah2@huawei-partners.com", roles: ["Maintenance_2", "Maintenance_1", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "sdardas", fullName: "sulieman dardas", type: "Local user", description: "sulieman.dardas@mada.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "shaban.zafar1", fullName: "shaban.zafar", type: "Local user", description: "Huawei_Team_Yahya abo reish", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "tareq.alnajjar", fullName: "tareq alnajjar", type: "Local user", description: "Enterprise Solutions Engineer Team Member", roles: ["Maintenance Group", "Maintenance_2", "Transport", "Maintenance_1", "MW_Planning&Enterprise_Solutions"], blocked: false },
+    { username: "tariq.zidan", fullName: "Tariq Zidan", type: "Local user", description: "Tariq.Zidan@jo.zain.com", roles: ["Core"], blocked: false },
+    { username: "tnoc_api", fullName: "TNOC_API", type: "Third-party user", description: "tnoc@jo.zain.com", roles: ["NBI User Group"], blocked: false },
+    { username: "yazan.ajjawi", fullName: "Yazan Ajjawi", type: "Local user", description: "Yazan.Ajjawi@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "yazan.jaber", fullName: "yazan jaber", type: "Local user", description: "yazan.jaber@jo.zain.com", roles: ["Core"], blocked: false },
+    { username: "youyanqiang5", fullName: "youyanqiang5", type: "Local user", description: "Huawei_Team_Yahya abo reish", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1", "Open Programmable Group", "Huawei_Group_Tunnel"], blocked: false },
+    { username: "zaid.al-aqqad", fullName: "Zaid Al-aqqad", type: "Local user", description: "zaid.al-aqqad@jo.zain.com", roles: ["Maintenance Group", "Maintenance_2", "Maintenance_1"], blocked: false },
+    { username: "zuhair.hattab", fullName: "zuhair hattab", type: "Local user", description: "TNoc_Team", roles: ["Operator Group", "TNOC-Operator-Group"], blocked: false }
+  ]
+};
+
+export function isOperatorBlocked(config: SourceConfig, operatorUsername: string): boolean {
+  return config.blockedOperators.includes(operatorUsername);
+}
+
+export function getOperatorInfo(config: SourceConfig, operatorUsername: string): SourceUser | undefined {
+  return config.users.find(u => u.username === operatorUsername);
+}
+
+export function isSourceIpMatch(config: SourceConfig, sourceIp: string): boolean {
+  return config.sourceIps.includes(sourceIp);
+}

@@ -2,18 +2,14 @@ import * as dgram from "dgram";
 import { storage } from "./storage";
 import { broadcastLog } from "./routes";
 import type { NmsSystem, InsertNmsLog, InsertLog } from "@shared/schema";
+import { getSourceConfigByIp, isOperatorBlockedForSource, getAllSourceConfigs } from "./source-configs";
 
 const SYSLOG_PORT = parseInt(process.env.SYSLOG_PORT || "514");
 
 const BATCH_SIZE = 50;
 const BATCH_INTERVAL_MS = 1000;
 
-const BLOCKED_OPERATORS = [
-  "kazema",
-  "IntegTeamAPIUser"
-];
-
-let blockedCount = 0;
+const blockedStats: Map<string, number> = new Map();
 
 let nmsLogBuffer: InsertNmsLog[] = [];
 let legacyLogBuffer: InsertLog[] = [];
@@ -42,12 +38,20 @@ setInterval(() => {
 }, 60000);
 
 export function getSyslogStats() {
+  const sourceConfigs = getAllSourceConfigs();
+  const totalBlocked = Array.from(blockedStats.values()).reduce((a, b) => a + b, 0);
+  
   return {
     totalReceived: stats.totalReceived,
     totalProcessed: stats.totalProcessed,
     totalErrors: stats.totalErrors,
-    totalBlocked: blockedCount,
-    blockedOperators: BLOCKED_OPERATORS,
+    totalBlocked,
+    blockedBySource: Object.fromEntries(blockedStats),
+    sourceConfigs: sourceConfigs.map(c => ({
+      name: c.name,
+      sourceIps: c.sourceIps,
+      blockedOperators: c.blockedOperators
+    })),
     lastMinuteCount: stats.lastMinuteCount,
     sourcesCount: Object.fromEntries(stats.sourcesCount),
     uptime: Math.floor((Date.now() - stats.startTime.getTime()) / 1000),
@@ -436,8 +440,10 @@ async function processLog(msg: Buffer, rinfo: dgram.RemoteInfo) {
     const parsed = parseSyslogMessage(msg.toString());
     const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
 
-    if (BLOCKED_OPERATORS.includes(logDetails.operatorUsername)) {
-      blockedCount++;
+    const sourceConfig = getSourceConfigByIp(sourceIp);
+    if (sourceConfig && isOperatorBlockedForSource(sourceIp, logDetails.operatorUsername)) {
+      const key = `${sourceConfig.name}:${logDetails.operatorUsername}`;
+      blockedStats.set(key, (blockedStats.get(key) || 0) + 1);
       return;
     }
 

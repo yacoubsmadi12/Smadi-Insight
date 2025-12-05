@@ -1,0 +1,146 @@
+﻿User Name,Full Name,Type,Description,Role
+admin,Administrator,Local user,System administrator,Administrators;SMManagers
+AUTIN_T1,,Local user,,NBI User Group;The role to invoke southbound APIs;Open Programmable Group
+Abdallah.Alkhatib,Abdallah.Alkhatib,Local user,Abdallah.Alkhatib@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1;IP_Enterprise_Maintenance_Engineer
+Abdelaziz.alnaser,Abdelaziz.alnaser,Local user,Abdelaziz.alnaser@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+Abdullah.Abu-Karaki,Abdullah Abu-Karaki,Local user,Abdullah Abu-Karaki@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+Abdulrahman.Osaili,Abdulrahman Osaili,Local user,Abdulrahman.Osaili@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+Abedalkarem.BaniHani,Abedalkarem Bani Hani,Local user,Abedalkarem.BaniHani@mada.jo,Maintenance Group;Maintenance_2;Maintenance_1;IP_Enterprise_Maintenance_Engineer
+Ahmad.Ismail,Ahmad Ismail,Local user,Ahmad.Ismail@jo.zain.com,Maintenance Group;Maintenance_2;Performance;Maintenance_1
+Alaa.Antari,Alaa.Antari@jo.zain.com,Local user,,Operator Group;TNOC-Operator-Group
+Amjad.lahlooh,Amjad lahlooh,Local user,,NOC-Operator-Group
+Azkhan.AlHissami,Azkhan AlHissami,Local user,Azkhan.AlHissami@jo.zain.com,GPON_Help_Desk
+Dala.Abbadi,Dala.Abbadi,Local user,,Maintenance Group;Maintenance_1
+Dania.Nofal,Dania.Nofal,Local user,commertial support,GPON_Help_Desk
+Fakher.AlBoukhari,Fakher AlBoukhari,Local user,Fakher.AlBoukhari@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+Ghaith.Ali,Ghaith Ali,Local user,Huawei Support,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group
+Gongchan,Gongchan,Local user,Gongchan@huawei.com,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+Husni.Yousef,Husni.Yousef@jo.zain.com,Local user,,Operator Group;NOC-Operator-Group
+IntegTeamAPIUser,IntegTeamAPIUser,Third-party user,IntegTeamAPIUser@jo.zain.com,NBI User Group;The role to invoke southbound APIs;Guests;Guest_2
+Khalid.Kokh,Khalid Kokh,Local user,Transmission Engineer,Maintenance Group;Maintenance_2;Maintenance_1
+Laith.Farrayeh,Laith Farrayeh,Local user,"	
+Radio NOC",Operator Group;NOC-Operator-Group
+Maen.mah,Maen.mah,Local user,Maen.AlMahadeen@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+Maher.AbuShawish,Maher AbuShawish@jo.zain.com,Local user,Customer Care,GPON_Help_Desk
+Majed.AlAssaf,Majed.AlAssaf,Local user,Majed.AlAssaf@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+Malek.AlShehab,Malek AlShehab,Local user,Malek.AlShehab@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+Mohammad.AlBakri,Mohammad AlBakri,Local user,Noc,NOC-Operator-Group
+Mohammad.Alhares,Mohammad Alhares,Local user,Mohammad.Alhares@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+Mohammadaw,Mohammad Al-awamleh,Local user,Mohammad.Al-awamleh@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1
+Mohammed.AbuSbeitan,Mohammed.AbuSbeitan,Local user,Mohammed.AbuSbeitan@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+MohmdAli,Mohammad Ali,Local user,Mohammad.Ali@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+Morad.jankhout,Morad jankhout,Local user,Morad.jankhout@jo.zain.com,Administrators;Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW Planning;MW_Planning&Enterprise_Solutions
+Mouyyad.Jumah,Mouyyad.Jumah,Local user,TNOC-Team,Maintenance Group;Maintenance_2;Maintenance_1
+Muhammad.Shehriyar,muhammad.shehriyar1,Local user,muhammad.shehriyar1@huawei-partners.com,Maintenance Group;Maintenance_2;Maintenance_1;Huawei_Group_Tunnel
+Mustafa.Sfaira,Mustafa.Sfaira@jo.zain.com,Local user,,Operator Group;NOC-Operator-Group
+Mustafaall,Mustafa Allahham,Local user,,Core
+Nooraldeen.Abdallah,Nooraldeen Abdallah,Local user,"	Transmission maintenance (intern, guest role)",Guests
+Qutaiba.Hliel,Qutaiba Hliel,Local user,Qutaiba.Hliel @jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+Saifaldean.AlDabiek,Saifaldean AlDabiek,Local user,Saifaldean AlDabiek@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1;IP_Enterprise_Maintenance_Engineer
+Super_test,,Third-party user,,NBI User Group
+Taher.AlTaha,Taher.AlTaha,Local user,Taher.AlTaha@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+Tamim.alMajali,Tamim alMajali,Local user,Customer Care,GPON_Help_Desk
+Tariq.AlHur,Tariq AlHur,Local user,Tariq.AlHur@jo.zain.com,Operator Group;TNOC-Operator-Group
+Tariq.Sulaiman,Tariq Sulaiman,Local user,Tariq.Sulaiman@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+Transmission.RPA,Transmission  Team,Local user,For Mr.mohammad ibrahem using for RPA,Maintenance Group;Maintenance_2;Maintenance_1;IP_Enterprise_Maintenance_Engineer
+Yahya.abualrish,Yahya.abualrish,Local user,Yahya.abualrish@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND;Transport;BROADBAND-002;Maintenance_1
+abd.mater,Abdelrahman Abumater,Local user,abdelrahman.abumater@jo.zain.com,Operator Group;TNOC-Operator-Group
+abdallah.atieh,Abdallah Atieh,Local user,Abdallah.Atieh@jo.zain.com,GPON_Help_Desk
+abdallah.oran,abdallah oran,Local user,Transmission Engineer Network,Maintenance Group;Maintenance_2;Maintenance_1
+abdelkareem.nasrallah,abdelkareem nasrallah,Local user,,GPON_Help_Desk
+abdelrahman.altayeh,abdelrahman altayeh,Local user,abdelrahman.altayeh@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+abdullahs,Abdullah Seyam,Local user,Abdullah.Seyam@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+adnan.alhorani,Adnan ALHorani,Local user,Adnan.ALHorani@jo.zain.com,Guests;Guest_2
+afaq.ahmad1,afaq.ahmad,Local user,"	afaq.ahmad1@huawei-partners.com
+
+",Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+ahmad.abuobaid,Ahmad AbuObaid,Local user,Ahmad.AbuObaid@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+ahmad.alkhatib,Ahmad Alkhatib,Local user,ahmad.alkhatib@jo.zain.com,NBI User Group;Transport;Maintenance_1;MW Planning;MW_Planning&Enterprise_Solutions
+ahmad.hudban,Ahmad Al Hudban,Local user,Ahmad.Alhudban@jo.zain.com,Operator Group;NOC-Operator-Group
+ahmad.marashdeh,ahmad marashdeh,Local user,ahmad.marashdeh,Operator Group;NOC-Operator-Group
+ahmad.nabas,Ahmad Nabas,Local user,ahmad.nabas@jo.zain.com,Operator Group;TNOC-Operator-Group
+ahmad.waleed,Ahmad Waleed,Local user,ahmad.waleed.elbess@huawei-partners.com,Maintenance Group;Maintenance_2;BROADBAND;Transport;BROADBAND-002;Maintenance_1
+ahmad.zalat,Ahmad Zalat,Local user,Ahmad.Zalat@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1;IP_Enterprise_Maintenance_Engineer
+ahmadat,Ahmad Al-Attar,Local user,Ahmad.Al-Attar@jo.zain.com,Administrators;Maintenance Group;Maintenance_2;Maintenance_1
+ahmaddi,Ahmed Diab,Local user,ahmed.diab@jo.zain.com,Maintenance_2;Maintenance_1
+akram.elturk,akram elturk,Local user,MW Planning & Transmission Implementation Team Member,NBI User Group;Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW Planning;MW_Planning&Enterprise_Solutions
+alaa.mufleh,alaa mufleh,Local user,alaa.mufleh@jo.zain.com,Guests;Guest_2
+alaa.sara1,alaa abu sara,Local user,alaa.abu.sara1@h-partners.com,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+anas.alamarneh,Anas Amarneh,Local user,anas.alamarneh@jo.zain.com,Guests
+anas.quzmar1,anas quzmar1,Local user,huawei-team,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+anas.sabbah,Anas Sabbah,Local user,"	Anas.Sabbah@jo.zain.com, for query only",Guests;Guest_2
+apimaintuser001,Ahmad Al Khatib user for API applications,Third-party user,"	Ahmad Al Khatib user for API applications
+ahmad.alkhatib@jo.zain.com",NBI User Group;Maintenance Group;Maintenance_2;Maintenance_1
+ata.zaben,Ata Zaben,Local user,Ata.Zaben@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+autinftth,Autin_FTTH,Third-party user,,NBI User Group;The role to invoke southbound APIs;Open Programmable Group
+autinuser,autin user,Third-party user,Autin Umberela System User,NBI User Group;The role to invoke southbound APIs
+bara.alkharma,Bara  Al Kharma,Local user,Bara.AlKharma@jo.zain.com,GPON_Help_Desk
+bashar.mohammad,bashar mohammad,Local user,bashar.mohammad.alhaj@huawei-partners.com,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+bashar.sallam,Bashar Sallam,Local user,bashar.sallam@jo.zain.com,GPON_Help_Desk
+ehab.suleiman,ehab suleiman,Local user,ehab.suleiman@jo.zain.com,GPON_Help_Desk
+enas.hersh,Enas Hersh,Local user,enas.hersh@jo.zain.com,Maintenance Group;FTTH_Planning_Implementation
+faisal.ersan,Faisal Ersan,Local user,faisal.ersan@jo.zain.com,Operator Group;NOC-Operator-Group
+fengshuxuan2,fengshuxuan,Local user,Huawei_Team_Yahya abo reish,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+fikri.alloubani,Fikri Alloubani,Local user,Fikri.Alloubani@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+hamas.jubran,Hamas Jubran,Local user,Hamas.Jubran@jo.zain.com,GPON_Help_Desk
+hamza.al-rajabi,Hamza Al-Rajabi,Local user,Hamza.Al-Rajabi@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1
+hamza.zubaidi,hamza zubaidi,Local user,Team huawei,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+haseeb.iftikhar,haseeb iftikhar,Local user,Team huawei,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+helal.alotaibi,Helal AlOtaibi,Local user,,NOC-Operator-Group
+husam.barjawi,Husam Barjawi,Local user,Husam.Barjawi@jo.zain.com,Maintenance Group;Maintenance_2;Performance;Maintenance_1
+hussam.juneidy,hussam juneidy,Local user,hussam.al.juneidy@h-partners.com,Maintenance Group;Maintenance_2;Maintenance_1;Huawei_Group_Tunnel
+ibrahim.tarawneh,ibrahim tarawneh,Local user,ibrahim.tarawneh@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+kazema,Kazem AlAssaf (IMPORTANT ACCOUNT),Local user,IMPORTANT ACCOUNT for GPON XML Interface,NBI User Group
+lana.alkhatib,Lana Al Khatib,Local user,FTTH Activation Engineer,Maintenance Group;FTTH_Planning_Implementation
+liuqingbo,liuqingbo,Local user,liuqingbo2@huawei.com,Maintenance_2;Maintenance_1
+majd.mohammad,majd mohammad,Local user,Team huawei,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group
+majid.fida1,majid.fida1,Local user,Huawei_Team_Yahya abo reish,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+malwedyan,malwedyan,Local user,Core Team,Core
+marwan.kanaan,Marwan Kanaan,Local user,Transmission Engineer Network,Maintenance Group;Maintenance_2;Maintenance_1
+mbadarneh,mohammad badarneh,Local user,core_team,Core
+moath.ahmad,Moath Ahmad,Local user,IP & Enterprise Maintenance,Maintenance Group;Maintenance_2;Maintenance_1;IP_Enterprise_Maintenance_Engineer
+mohammad.abdallah,Mohammad Abdallah,Local user,Enterprise & Home Internet Complaints,GPON_Help_Desk
+mohammad.ibrahem,Mohammad Ibrahem,Local user,Transmission Engineer Network,Maintenance Group;Maintenance_2;Maintenance_1
+mohammad.kashkoul,Mohammad Kashkoul,Local user,Mohammad.Kashkoul@jo.zain.com,GPON_Help_Desk
+mohammad.khaleel,Mohammad Khaleel,Local user,Mohammad.Khaleel@jo.zain.com,GPON_Help_Desk
+mohammad.marar,mohammad marar,Local user,mohammad.marar@jo.zain.com,Guests
+mohammad.omar,mohammad omar,Local user,mohammad.omar2@h-partners.com,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+mohammad.rababaa,Mohammad  Rababaa,Local user,Mohammad.Rababaa@jo.zain.com,Maintenance Group;Maintenance_2;BROADBAND-002;Maintenance_1
+mohammed.f,mohammed faide,Local user,mohammed faide@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+mohd.aburyash,mohd.aburyash,Local user,mohd.aburyash,Maintenance Group;Maintenance_2;Maintenance_1
+mohd.banihamad,Mohammad Bani-Hamad,Local user,Mohammad Bani-Hamad@jo.zain.com,GPON_Help_Desk
+mohd.elawa,Mohammad Elawa,Local user,mohammad.elawa@jo.zain.com,Operator Group;TNOC-Operator-Group
+mohd.samour,mohammed samour,Local user,mohammed.samour@jo.zain.com,Operator Group;NOC-Operator-Group
+mosab.smadi,Mosab Smadi,Local user,mosab.smadi@jo.zain.com,Operator Group;TNOC-Operator-Group
+mousa.m.abualtayeb,mousa.m.abualtayeb,Local user,mousa.m.abualtayeb @jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+muhammad.abdul,muhammad.abdul,Local user,Huawei_Team_Yahya abo reish,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+muhammad.ijaz2,muhammad ijaz,Local user,muhammad.ijaz2@huawei.com,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group
+muhammad.komail1,muhammad komail,Local user,Team huawei,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+muhammad.yasir,muhammad yasir,Local user,Huawei_Team_Yahya abo reish,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+naser.nazal,Naser Nazal,Local user,naser.nazal@jo.zain.com,Operator Group;NOC-Operator-Group
+nasir.jameel,Nasir Jameel,Local user,nasir.jameel@huawei-partners.com,Maintenance Group;Maintenance_2;Maintenance_1
+nbiuser_zain,,Third-party user,Changeme_12#,NBI User Group
+nehad.shorbaji,nehad shorbaji,Local user,nehad.shorbaji@jo.zain.com,Operator Group
+obaida.m,Obaida Masarweh,Local user,Obaida Masarweh@huawei.com,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+obaida.m.q,Obaida Masarweh,Local user,Obaida Masarweh@huawei.com,Huawei_Group_Tunnel
+oday.sha,Oday AlShawabkah,Local user,Oday.AlShawabkah@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+osaid.bolbol,osaid bolbol,Local user,osaid.bolbol@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+qualityrpa,RPA Developer,Third-party user,RPA Developer API USER,NBI User Group;The role to invoke southbound APIs;Open Programmable Group
+qusai.dayeh,qusai.dayeh@jo.zain.com,Local user,,Operator Group;NOC-Operator-Group
+raad.a,raad abudayeh,Local user,raad.abudayeh@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+raad.qandah,Raad Qandah,Local user,raad.qandah@jo.zain.com,Maintenance Group;Maintenance_2;Performance;Maintenance_1
+rayan.fanatseh,rayan.fanatseh,Local user,,Operator Group;NOC-Operator-Group
+saddamta,Saddam AlTamimi,Local user,Saddam.AlTamimi@jo.zain.com,Transport;MW Planning
+saja.aldabes,saja aldabes,Local user,saja.aldabes@jo.zain.com,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+saleem.ullah,saleem ullah,Local user,saleem.ullah2@huawei-partners.com,Maintenance_2;Maintenance_1;Huawei_Group_Tunnel
+sdardas,sulieman dardas,Local user,sulieman.dardas@mada.com,Maintenance Group;Maintenance_2;Maintenance_1
+shaban.zafar1,shaban.zafar,Local user,Huawei_Team_Yahya abo reish,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+tareq.alnajjar,tareq alnajjar,Local user,Enterprise Solutions Engineer Team Member,Maintenance Group;Maintenance_2;Transport;Maintenance_1;MW_Planning&Enterprise_Solutions
+tariq.zidan,Tariq Zidan,Local user,Tariq.Zidan@jo.zain.com,Core
+tnoc_api,TNOC_API,Third-party user,tnoc@jo.zain.com,NBI User Group
+yazan.ajjawi,Yazan Ajjawi,Local user,Yazan.Ajjawi@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+yazan.jaber,yazan jaber,Local user,yazan.jaber@jo.zain.com,Core
+youyanqiang5,youyanqiang5,Local user,Huawei_Team_Yahya abo reish,Maintenance Group;Maintenance_2;Maintenance_1;Open Programmable Group;Huawei_Group_Tunnel
+zaid.al-aqqad,Zaid Al-aqqad,Local user,zaid.al-aqqad@jo.zain.com,Maintenance Group;Maintenance_2;Maintenance_1
+zuhair.hattab,zuhair hattab,Local user,"	TNoc_Team
+",Operator Group;TNOC-Operator-Group
