@@ -5,7 +5,6 @@ import { queryClient } from "@/lib/queryClient";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +80,6 @@ interface SystemInfo {
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
   
   const [deleteType, setDeleteType] = useState<string>("nmsLogs");
@@ -313,29 +311,6 @@ export default function SettingsPage() {
                     >
                       <Moon className="w-4 h-4 mr-1" />
                       Dark
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-foreground">{t("settings.language")}</p>
-                    <p className="text-sm text-muted-foreground">Select your preferred language</p>
-                  </div>
-                  <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
-                    <Button
-                      variant={language === "en" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setLanguage("en")}
-                    >
-                      English
-                    </Button>
-                    <Button
-                      variant={language === "ar" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setLanguage("ar")}
-                    >
-                      العربية
                     </Button>
                   </div>
                 </div>
