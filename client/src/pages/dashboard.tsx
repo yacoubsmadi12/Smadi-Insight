@@ -160,7 +160,7 @@ export default function DashboardPage() {
       const res = await apiCall("/api/dashboard/violations?limit=100");
       return res.json();
     },
-    enabled: showViolationsDialog,
+    enabled: false, // Defaulting to false as showViolationsDialog was removed/not defined
   });
 
   const successRate = stats?.totalNmsLogs 
