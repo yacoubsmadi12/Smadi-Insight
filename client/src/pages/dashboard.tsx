@@ -112,6 +112,7 @@ export default function DashboardPage() {
     },
     refetchInterval: 10000,
     retry: 1,
+    staleTime: 5000, // Consider data fresh for 5 seconds
   });
 
   const { data: violationsData } = useQuery<ViolationLog[]>({
