@@ -906,6 +906,29 @@ export class DatabaseStorage implements IStorage {
     return result.length;
   }
 
+  async clearTable(tableName: string): Promise<number> {
+    const tableMap: Record<string, any> = {
+      'nmsLogs': nmsLogs,
+      'analysisReports': analysisReports,
+      'operators': operators,
+      'operatorGroups': operatorGroups,
+      'managers': managers,
+      'nmsSystems': nmsSystems,
+      'employees': employees,
+      'logs': logs,
+      'reports': reports,
+      'scheduledReports': scheduledReports
+    };
+
+    const table = tableMap[tableName];
+    if (!table) throw new Error(`Table ${tableName} not found`);
+
+    const countResult = await db.select({ count: count() }).from(table);
+    const deletedCount = Number(countResult[0]?.count || 0);
+    await db.delete(table);
+    return deletedCount;
+  }
+
   // Email Settings methods
   async getEmailSettings(): Promise<EmailSettings | undefined> {
     const result = await db.select().from(emailSettings).limit(1);

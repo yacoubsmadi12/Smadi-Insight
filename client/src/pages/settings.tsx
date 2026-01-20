@@ -42,7 +42,8 @@ import {
   Cpu,
   MemoryStick,
   Loader2,
-  Calendar
+  Calendar,
+  Layers
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -60,6 +61,7 @@ interface DbStats {
     logs: number;
     reports: number;
   };
+  scheduledReports: number;
 }
 
 interface SystemInfo {
@@ -137,6 +139,31 @@ export default function SettingsPage() {
     }
   });
 
+  const clearTableMutation = useMutation({
+    mutationFn: async (tableName: string) => {
+      const res = await apiCall(`/api/admin/clear-table/${tableName}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(`Failed to clear ${tableName}`);
+      return res.json();
+    },
+    onSuccess: (_, tableName) => {
+      toast({
+        title: "Table Cleared",
+        description: `All records from ${tableName} have been deleted.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/db-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/nms-systems"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const clearNmsDataMutation = useMutation({
     mutationFn: async () => {
       const res = await apiCall("/api/admin/clear-nms-data", { method: "DELETE" });
@@ -146,7 +173,7 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       toast({
         title: "NMS Data Cleared",
-        description: `Deleted: ${data.deleted.nmsLogs} logs, ${data.deleted.nmsSystems} systems, ${data.deleted.operators} operators`,
+        description: `Deleted total records across all NMS tables.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/db-stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/nms-systems"] });
@@ -171,7 +198,7 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       toast({
         title: "Legacy Data Cleared",
-        description: `Deleted: ${data.deleted.logs} logs, ${data.deleted.employees} employees, ${data.deleted.reports} reports`,
+        description: `Deleted total records across all legacy tables.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/db-stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
@@ -200,8 +227,47 @@ export default function SettingsPage() {
   const totalLegacyRecords = dbStats ?
     dbStats.legacy.employees + dbStats.legacy.logs + dbStats.legacy.reports : 0;
 
+  const TableControl = ({ label, count, tableName, icon: Icon, color }: { label: string, count: number, tableName: string, icon: any, color: string }) => (
+    <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg group hover:bg-muted transition-colors">
+      <div className="flex items-center gap-3">
+        <div className={`p-2 rounded-md bg-${color}/10 text-${color}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">{count.toLocaleString()} records</p>
+        </div>
+      </div>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear {label}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all {count.toLocaleString()} records from the {label} table. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-destructive text-destructive-foreground"
+              onClick={() => clearTableMutation.mutate(tableName)}
+            >
+              Clear Table
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <Sidebar />
       <div className="ml-64">
         <Header />
@@ -236,7 +302,6 @@ export default function SettingsPage() {
                       variant={theme === "light" ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setTheme("light")}
-                      data-testid="button-theme-light"
                     >
                       <Sun className="w-4 h-4 mr-1" />
                       Light
@@ -245,7 +310,6 @@ export default function SettingsPage() {
                       variant={theme === "dark" ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setTheme("dark")}
-                      data-testid="button-theme-dark"
                     >
                       <Moon className="w-4 h-4 mr-1" />
                       Dark
@@ -263,7 +327,6 @@ export default function SettingsPage() {
                       variant={language === "en" ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setLanguage("en")}
-                      data-testid="button-lang-en"
                     >
                       English
                     </Button>
@@ -271,7 +334,6 @@ export default function SettingsPage() {
                       variant={language === "ar" ? "default" : "ghost"}
                       size="sm"
                       onClick={() => setLanguage("ar")}
-                      data-testid="button-lang-ar"
                     >
                       العربية
                     </Button>
@@ -346,12 +408,29 @@ export default function SettingsPage() {
                     <Database className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl">Database Maintenance</CardTitle>
-                    <CardDescription>Delete specific logs by date range</CardDescription>
+                    <CardTitle className="text-xl">Database Control Center</CardTitle>
+                    <CardDescription>Full management of all database tables and records</CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => refetchDbStats()}
+                >
+                  <RefreshCw className="w-4 h-4 mr-1" />
+                  Refresh Stats
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-8">
+              {/* Log Cleanup Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Trash2 className="w-5 h-5 text-destructive" />
+                  Partial Log Cleanup
+                </h3>
+                <div className="bg-muted/30 p-4 rounded-xl space-y-4">
+                  <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
                     <Button
                       variant={deleteType === "nms" ? "default" : "ghost"}
                       size="sm"
@@ -367,246 +446,107 @@ export default function SettingsPage() {
                       Legacy Logs
                     </Button>
                   </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    Start Date
-                  </Label>
-                  <Input 
-                    type="date" 
-                    value={startDate} 
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-muted/50"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" />
-                    End Date
-                  </Label>
-                  <Input 
-                    type="date" 
-                    value={endDate} 
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-muted/50"
-                  />
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      className="w-full"
-                      disabled={deleteLogsByDateMutation.isPending}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Logs by Date
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently delete all {deleteType === "nms" ? "NMS" : "Legacy"} logs 
-                        between <strong>{startDate}</strong> and <strong>{endDate}</strong>.
-                        This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        className="bg-destructive text-destructive-foreground"
-                        onClick={() => deleteLogsByDateMutation.mutate()}
-                      >
-                        Yes, Delete Logs
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="w-5 h-5 text-primary" />
-                    Database Statistics
-                  </CardTitle>
-                  <CardDescription>Overall database records overview</CardDescription>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => refetchDbStats()}
-                  data-testid="button-refresh-db-stats"
-                >
-                  <RefreshCw className="w-4 h-4 mr-1" />
-                  Refresh
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {dbStatsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : dbStats ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium flex items-center gap-2">
-                        <Server className="w-4 h-4 text-cyan-500" />
-                        NMS Data
-                      </h3>
-                      <Badge variant="secondary">{totalNmsRecords.toLocaleString()} records</Badge>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-xs">Start Date</Label>
+                      <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-background" />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold">{dbStats.nms.systems}</p>
-                        <p className="text-xs text-muted-foreground">NMS Systems</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold">{dbStats.nms.logs.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">NMS Logs</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold">{dbStats.nms.operators}</p>
-                        <p className="text-xs text-muted-foreground">Operators</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold">{dbStats.nms.analysisReports}</p>
-                        <p className="text-xs text-muted-foreground">Reports</p>
-                      </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2 text-xs">End Date</Label>
+                      <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-background" />
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="destructive" 
-                          className="w-full"
-                          disabled={clearNmsDataMutation.isPending || totalNmsRecords === 0}
-                          data-testid="button-clear-nms-data"
-                        >
-                          {clearNmsDataMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4 mr-2" />
-                          )}
-                          Clear All NMS Data
+                        <Button variant="destructive" className="w-full" disabled={deleteLogsByDateMutation.isPending}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete by Date
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5 text-destructive" />
-                            Clear All NMS Data?
-                          </AlertDialogTitle>
+                          <AlertDialogTitle>Delete range?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete all NMS systems, 
-                            logs, operators, operator groups, managers, and analysis reports.
-                            <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                              <strong>Records to be deleted:</strong>
-                              <ul className="mt-2 space-y-1">
-                                <li>NMS Systems: {dbStats.nms.systems}</li>
-                                <li>NMS Logs: {dbStats.nms.logs.toLocaleString()}</li>
-                                <li>Operators: {dbStats.nms.operators}</li>
-                                <li>Analysis Reports: {dbStats.nms.analysisReports}</li>
-                              </ul>
-                            </div>
+                            Permanently delete {deleteType} logs from {startDate} to {endDate}.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => clearNmsDataMutation.mutate()}
-                            className="bg-destructive text-destructive-foreground"
-                          >
-                            Yes, Delete All
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium flex items-center gap-2">
-                        <Users className="w-4 h-4 text-amber-500" />
-                        Legacy Data
-                      </h3>
-                      <Badge variant="secondary">{totalLegacyRecords.toLocaleString()} records</Badge>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold">{dbStats.legacy.employees}</p>
-                        <p className="text-xs text-muted-foreground">Employees</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <p className="text-2xl font-bold">{dbStats.legacy.logs.toLocaleString()}</p>
-                        <p className="text-xs text-muted-foreground">Activity Logs</p>
-                      </div>
-                      <div className="p-3 bg-muted/50 rounded-lg col-span-2">
-                        <p className="text-2xl font-bold">{dbStats.legacy.reports}</p>
-                        <p className="text-xs text-muted-foreground">Employee Reports</p>
-                      </div>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="destructive" 
-                          className="w-full"
-                          disabled={clearLegacyDataMutation.isPending || totalLegacyRecords === 0}
-                          data-testid="button-clear-legacy-data"
-                        >
-                          {clearLegacyDataMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4 mr-2" />
-                          )}
-                          Clear All Legacy Data
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5 text-destructive" />
-                            Clear All Legacy Data?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete all employees, 
-                            activity logs, and employee reports.
-                            <div className="mt-3 p-3 bg-muted rounded-lg text-sm">
-                              <strong>Records to be deleted:</strong>
-                              <ul className="mt-2 space-y-1">
-                                <li>Employees: {dbStats.legacy.employees}</li>
-                                <li>Activity Logs: {dbStats.legacy.logs.toLocaleString()}</li>
-                                <li>Reports: {dbStats.legacy.reports}</li>
-                              </ul>
-                            </div>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => clearLegacyDataMutation.mutate()}
-                            className="bg-destructive text-destructive-foreground"
-                          >
-                            Yes, Delete All
-                          </AlertDialogAction>
+                          <AlertDialogAction className="bg-destructive" onClick={() => deleteLogsByDateMutation.mutate()}>Delete</AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
                 </div>
-              ) : (
-                <p className="text-muted-foreground text-center py-4">Unable to load database statistics</p>
-              )}
+              </div>
+
+              {/* Individual Table Management */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* NMS Tables */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Server className="w-5 h-5 text-cyan-500" />
+                      NMS Infrastructure
+                    </h3>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/10">
+                          Clear All NMS
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Clear ALL NMS Data?</AlertDialogTitle></AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction className="bg-destructive" onClick={() => clearNmsDataMutation.mutate()}>Confirm Wipe</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  {dbStats && (
+                    <div className="space-y-2">
+                      <TableControl label="NMS Systems" count={dbStats.nms.systems} tableName="nmsSystems" icon={Server} color="cyan" />
+                      <TableControl label="NMS Logs" count={dbStats.nms.logs} tableName="nmsLogs" icon={Activity} color="cyan" />
+                      <TableControl label="Operators" count={dbStats.nms.operators} tableName="operators" icon={Users} color="cyan" />
+                      <TableControl label="Analysis Reports" count={dbStats.nms.analysisReports} tableName="analysisReports" icon={FileText} color="cyan" />
+                      <TableControl label="Managers" count={dbStats.nms.managers} tableName="managers" icon={Shield} color="cyan" />
+                      <TableControl label="Operator Groups" count={dbStats.nms.operatorGroups} tableName="operatorGroups" icon={Layers} color="cyan" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Legacy Tables */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <Users className="w-5 h-5 text-amber-500" />
+                      Legacy & Other
+                    </h3>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive border-destructive/20 hover:bg-destructive/10">
+                          Clear All Legacy
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader><AlertDialogTitle>Clear ALL Legacy Data?</AlertDialogTitle></AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction className="bg-destructive" onClick={() => clearLegacyDataMutation.mutate()}>Confirm Wipe</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  {dbStats && (
+                    <div className="space-y-2">
+                      <TableControl label="Employees" count={dbStats.legacy.employees} tableName="employees" icon={Users} color="amber" />
+                      <TableControl label="Activity Logs" count={dbStats.legacy.logs} tableName="logs" icon={Activity} color="amber" />
+                      <TableControl label="Employee Reports" count={dbStats.legacy.reports} tableName="reports" icon={FileText} color="amber" />
+                      <TableControl label="Scheduled Reports" count={dbStats.scheduledReports || 0} tableName="scheduledReports" icon={Calendar} color="purple" />
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
 

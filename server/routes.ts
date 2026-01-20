@@ -438,6 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const employees = await storage.getEmployees({});
       const logs = await storage.getLogs({});
       const reports = await storage.getReports({});
+      const scheduledReports = await storage.getScheduledReports();
 
       res.json({
         totalEmployees: employees.length,
@@ -1400,6 +1401,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/admin/clear-table/:tableName", authenticateToken, async (req: Request, res: Response) => {
+    try {
+      const { tableName } = req.params;
+      const count = await storage.clearTable(tableName);
+      res.json({ message: `Table ${tableName} cleared successfully`, count });
+    } catch (error: any) {
+      console.error(`Clear table ${req.params.tableName} error:`, error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Database Statistics
   app.get("/api/admin/db-stats", authenticateToken, async (req: Request, res: Response) => {
     try {
@@ -1412,6 +1424,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const employees = await storage.getEmployees({});
       const logs = await storage.getLogs({});
       const reports = await storage.getReports({});
+      const scheduledReports = await storage.getScheduledReports();
 
       res.json({
         nms: {
@@ -1426,7 +1439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           employees: employees.length,
           logs: logs.length,
           reports: reports.length
-        }
+        },
+        scheduledReports: scheduledReports.length
       });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
