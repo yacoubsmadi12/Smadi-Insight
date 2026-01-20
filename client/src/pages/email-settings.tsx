@@ -769,43 +769,14 @@ export default function EmailSettingsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-green-500" />
-                    Daily Reports
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Sent every day at 8:00 AM. Quick summary of daily activities and violations.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-blue-500" />
-                    Weekly Reports
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Sent every Monday at 8:00 AM. Includes weekly summary of operations and violations.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium flex items-center gap-2 mb-2">
-                    <Calendar className="w-4 h-4 text-purple-500" />
-                    Monthly Reports
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Sent on the 1st of each month. Comprehensive analysis of monthly trends.
-                  </p>
-                </div>
-                <div className="p-4 rounded-lg bg-muted/50 border">
-                  <h4 className="font-medium flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-amber-500" />
-                    Quarterly Reports
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    Sent at the start of each quarter. Executive summary with strategic insights.
-                  </p>
-                </div>
+              <div className="p-4 rounded-lg bg-muted/50 border">
+                <h4 className="font-medium flex items-center gap-2 mb-2">
+                  <Calendar className="w-4 h-4 text-purple-500" />
+                  Monthly Reports
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Sent on the 1st of each month. Comprehensive analysis of monthly trends.
+                </p>
               </div>
             </CardContent>
           </Card>
