@@ -190,6 +190,8 @@ export interface IStorage {
   // Database management methods
   clearAllNmsData(): Promise<{ nmsLogs: number; analysisReports: number; operators: number; operatorGroups: number; managers: number; nmsSystems: number }>;
   clearAllLegacyData(): Promise<{ logs: number; reports: number; employees: number }>;
+  deleteNmsLogsByDate(startDate: Date, endDate: Date): Promise<number>;
+  deleteLegacyLogsByDate(startDate: Date, endDate: Date): Promise<number>;
 
   // Email Settings methods
   getEmailSettings(): Promise<EmailSettings | undefined>;
@@ -882,6 +884,26 @@ export class DatabaseStorage implements IStorage {
       reports: Number(reportsCount[0]?.count || 0),
       employees: Number(employeesCount[0]?.count || 0)
     };
+  }
+
+  async deleteNmsLogsByDate(startDate: Date, endDate: Date): Promise<number> {
+    const result = await db.delete(nmsLogs).where(
+      and(
+        gte(nmsLogs.timestamp, startDate),
+        lte(nmsLogs.timestamp, endDate)
+      )
+    );
+    return result.length;
+  }
+
+  async deleteLegacyLogsByDate(startDate: Date, endDate: Date): Promise<number> {
+    const result = await db.delete(logs).where(
+      and(
+        gte(logs.timestamp, startDate),
+        lte(logs.timestamp, endDate)
+      )
+    );
+    return result.length;
   }
 
   // Email Settings methods

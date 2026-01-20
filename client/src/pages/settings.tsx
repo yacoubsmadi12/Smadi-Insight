@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -39,8 +41,10 @@ import {
   HardDrive,
   Cpu,
   MemoryStick,
-  Loader2
+  Loader2,
+  Calendar
 } from "lucide-react";
+import { format } from "date-fns";
 
 interface DbStats {
   nms: {
@@ -77,8 +81,10 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
-  const [clearingNms, setClearingNms] = useState(false);
-  const [clearingLegacy, setClearingLegacy] = useState(false);
+  
+  const [deleteType, setDeleteType] = useState<"nms" | "legacy">("nms");
+  const [startDate, setStartDate] = useState(format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"));
+  const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   const { data: dbStats, isLoading: dbStatsLoading, refetch: refetchDbStats } = useQuery<DbStats>({
     queryKey: ["/api/admin/db-stats"],
@@ -96,6 +102,39 @@ export default function SettingsPage() {
       return res.json();
     },
     refetchInterval: 10000,
+  });
+
+  const deleteLogsByDateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiCall("/api/admin/delete-logs-by-date", {
+        method: "DELETE",
+        body: JSON.stringify({
+          startDate: new Date(startDate).toISOString(),
+          endDate: new Date(endDate + "T23:59:59").toISOString(),
+          type: deleteType
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to delete logs");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Logs Deleted",
+        description: `${data.count} logs deleted for the selected period.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/db-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: (error as Error).message,
+        variant: "destructive",
+      });
+    }
   });
 
   const clearNmsDataMutation = useMutation({
@@ -302,12 +341,105 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-primary/20 rounded-lg">
+                    <Database className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Database Maintenance</CardTitle>
+                    <CardDescription>Delete specific logs by date range</CardDescription>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+                    <Button
+                      variant={deleteType === "nms" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setDeleteType("nms")}
+                    >
+                      NMS Logs
+                    </Button>
+                    <Button
+                      variant={deleteType === "legacy" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setDeleteType("legacy")}
+                    >
+                      Legacy Logs
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    Start Date
+                  </Label>
+                  <Input 
+                    type="date" 
+                    value={startDate} 
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    End Date
+                  </Label>
+                  <Input 
+                    type="date" 
+                    value={endDate} 
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="bg-muted/50"
+                  />
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full"
+                      disabled={deleteLogsByDateMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Logs by Date
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete all {deleteType === "nms" ? "NMS" : "Legacy"} logs 
+                        between <strong>{startDate}</strong> and <strong>{endDate}</strong>.
+                        This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        className="bg-destructive text-destructive-foreground"
+                        onClick={() => deleteLogsByDateMutation.mutate()}
+                      >
+                        Yes, Delete Logs
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Database className="w-5 h-5 text-primary" />
-                    Database Management
+                    Database Statistics
                   </CardTitle>
-                  <CardDescription>View and manage database records</CardDescription>
+                  <CardDescription>Overall database records overview</CardDescription>
                 </div>
                 <Button 
                   variant="outline" 
