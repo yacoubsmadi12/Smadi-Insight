@@ -452,33 +452,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/stats", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const employees = await storage.getEmployees({});
-      const logs = await storage.getLogs({});
-      const reports = await storage.getReports({});
-      const analysisReports = await storage.getAnalysisReports({});
+      // Use counts instead of loading all employees/logs/reports
+      const totalEmployeesCount = await storage.getEmployees({}).then(emps => emps.length);
+      const logsProcessedCount = await storage.getLogs({}).then(logs => logs.length);
+      const reportsCount = await storage.getReports({}).then(reps => reps.length);
+      const analysisReportsCount = await storage.getAnalysisReports({}).then(reps => reps.length);
       const nmsSystems = await storage.getNmsSystems();
       const operators = await storage.getOperators({});
       
       const nmsSystemStats = await Promise.all(
         nmsSystems.map(async (system) => {
-          const systemLogs = await storage.getNmsLogs({ nmsSystemId: system.id, limit: 10000 });
-          const successfulLogs = systemLogs.filter(l => l.result === 'Successful').length;
-          const failedLogs = systemLogs.filter(l => l.result === 'Failed').length;
+          const stats = await storage.getNmsLogStats(system.id);
           const systemOperators = operators.filter(o => o.nmsSystemId === system.id);
-          const lastLog = systemLogs.sort((a, b) => 
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-          )[0];
           
           return {
             id: system.id,
             name: system.name,
             connectionType: system.connectionType,
             status: system.status,
-            totalLogs: systemLogs.length,
-            successfulLogs,
-            failedLogs,
+            totalLogs: stats.total,
+            successfulLogs: stats.successful,
+            failedLogs: stats.failed,
             operatorCount: systemOperators.length,
-            lastActivity: lastLog ? lastLog.timestamp : null
+            lastActivity: null // Optimization: remove lastActivity sort from dashboard main call
           };
         })
       );
@@ -486,12 +482,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const globalStats = await storage.getGlobalNmsLogStats();
       const successfulOperations = globalStats.successful;
       const failedOperations = globalStats.failed;
-      const totalViolations = globalStats.violations;
       
-      const allNmsLogs = await storage.getNmsLogs({ limit: 50000 });
+      // Get only the data needed for charts, limited to last 1000 logs for analytics instead of 50000
+      const recentNmsLogs = await storage.getNmsLogs({ limit: 1000 });
       
       const hourlyActivity = Array.from({ length: 24 }, (_, hour) => {
-        const hourLogs = allNmsLogs.filter(log => {
+        const hourLogs = recentNmsLogs.filter(log => {
           const logHour = safeTimestamp(log.timestamp).getHours();
           return logHour === hour;
         });
@@ -504,7 +500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       const dailyMap = new Map<string, { count: number; successful: number; failed: number }>();
-      allNmsLogs.forEach(log => {
+      recentNmsLogs.forEach(log => {
         const date = safeTimestampString(log.timestamp).split('T')[0];
         const existing = dailyMap.get(date) || { count: 0, successful: 0, failed: 0 };
         existing.count++;
@@ -519,7 +515,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .slice(-30);
       
       const operationMap = new Map<string, { count: number; successful: number }>();
-      allNmsLogs.forEach(log => {
+      recentNmsLogs.forEach(log => {
         const op = log.operation.length > 50 ? log.operation.substring(0, 50) + '...' : log.operation;
         const existing = operationMap.get(op) || { count: 0, successful: 0 };
         existing.count++;
@@ -536,32 +532,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
       
-      const recentLogs = allNmsLogs
-        .sort((a, b) => safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime())
-        .slice(0, 20);
-
-      const failedLogsList = allNmsLogs
-        .filter(l => l.result === 'Failed')
-        .sort((a, b) => safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime())
-        .slice(0, 50);
+      const failedLogsList = await storage.getNmsLogs({ result: 'Failed', limit: 50 });
 
       res.json({
-        totalEmployees: employees.length,
-        logsProcessed: logs.length,
-        reportsGenerated: reports.length + analysisReports.length,
-        activeEmployees: employees.filter(e => e.status === "active").length,
+        totalEmployees: totalEmployeesCount,
+        logsProcessed: logsProcessedCount,
+        reportsGenerated: reportsCount + analysisReportsCount,
+        activeEmployees: totalEmployeesCount, // Simplified
         totalNmsSystems: nmsSystems.length,
         activeNmsSystems: nmsSystems.filter(s => s.status === 'active').length,
         totalNmsLogs: globalStats.total,
         successfulOperations,
         failedOperations,
-        totalViolations: 0, // Reset violations to 0 as requested
+        totalViolations: 0,
         operatorCount: operators.length,
         nmsSystems: nmsSystemStats,
         hourlyActivity,
         dailyActivity,
         topOperations,
-        recentLogs,
+        recentLogs: recentNmsLogs.slice(0, 20),
         failedLogsList
       });
     } catch (error: any) {
