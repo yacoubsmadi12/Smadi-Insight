@@ -42,7 +42,7 @@ export default function AnalysisReportsPage() {
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [generateConfig, setGenerateConfig] = useState({
     nmsSystemId: "",
-    reportType: "daily",
+    reportType: "monthly",
     groupId: "",
   });
 
