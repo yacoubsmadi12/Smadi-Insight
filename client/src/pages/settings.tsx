@@ -274,9 +274,9 @@ export default function SettingsPage() {
             <div>
               <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
                 <Settings className="w-6 h-6 text-primary" />
-                {t("settings.title")}
+                Settings
               </h2>
-              <p className="text-sm text-muted-foreground">{t("settings.subtitle")}</p>
+              <p className="text-sm text-muted-foreground">Configure your application and manage system resources</p>
             </div>
           </div>
 
@@ -285,14 +285,14 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="w-5 h-5 text-primary" />
-                  {t("settings.preferences")}
+                  Preferences
                 </CardTitle>
                 <CardDescription>Customize your application experience</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-foreground">{t("settings.theme")}</p>
+                    <p className="font-medium text-foreground">Theme</p>
                     <p className="text-sm text-muted-foreground">Choose light or dark mode</p>
                   </div>
                   <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
