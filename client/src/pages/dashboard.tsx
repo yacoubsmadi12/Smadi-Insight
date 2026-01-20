@@ -114,6 +114,15 @@ export default function DashboardPage() {
     retry: 1,
   });
 
+  const { data: violationsData } = useQuery<ViolationLog[]>({
+    queryKey: ["/api/dashboard/violations"],
+    queryFn: async () => {
+      const res = await apiCall("/api/dashboard/violations?limit=100");
+      return res.json();
+    },
+    enabled: false,
+  });
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -153,15 +162,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const { data: violationsData } = useQuery<ViolationLog[]>({
-    queryKey: ["/api/dashboard/violations"],
-    queryFn: async () => {
-      const res = await apiCall("/api/dashboard/violations?limit=100");
-      return res.json();
-    },
-    enabled: false, // Defaulting to false as showViolationsDialog was removed/not defined
-  });
 
   const successRate = stats?.totalNmsLogs 
     ? ((stats.successfulOperations / stats.totalNmsLogs) * 100).toFixed(1) 
