@@ -100,14 +100,59 @@ const COLORS = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'
 export default function DashboardPage() {
   const [showFailedOpsDialog, setShowFailedOpsDialog] = useState(false);
 
-  const { data: stats, isLoading } = useQuery<DashboardStats & { failedLogsList?: any[] }>({
+  const { data: stats, isLoading, error } = useQuery<DashboardStats & { failedLogsList?: any[] }>({
     queryKey: ["/api/dashboard/stats"],
     queryFn: async () => {
       const res = await apiCall("/api/dashboard/stats");
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to fetch dashboard stats");
+      }
       return res.json();
     },
     refetchInterval: 10000,
+    retry: 1,
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Activity className="w-12 h-12 text-primary animate-spin mx-auto" />
+          <p className="text-muted-foreground animate-pulse">Loading analytics data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full border-red-500/20 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="text-red-500 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5" />
+              Connection Error
+            </CardTitle>
+            <CardDescription>
+              We encountered a problem connecting to the analytics server.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="p-3 bg-black/20 rounded text-sm font-mono text-red-400 break-all">
+              {(error as Error).message}
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={() => window.location.reload()}
+            >
+              Retry Connection
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const { data: violationsData } = useQuery<ViolationLog[]>({
     queryKey: ["/api/dashboard/violations"],
