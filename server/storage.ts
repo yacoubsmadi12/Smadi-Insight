@@ -337,7 +337,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLogs(insertLogs: InsertLog[]): Promise<Log[]> {
-    const BATCH_SIZE = 100;
+    const BATCH_SIZE = 50; // Reduced from 100
     const allCreatedLogs: Log[] = [];
 
     for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
@@ -345,10 +345,11 @@ export class DatabaseStorage implements IStorage {
       const batchWithIds = batch.map(log => ({ ...log, id: uuidv4() }));
       await db.insert(logs).values(batchWithIds as any);
       
-      for (const log of batchWithIds) {
-        const result = await db.select().from(logs).where(eq(logs.id, log.id));
-        if (result[0]) allCreatedLogs.push(result[0]);
-      }
+      // Batch fetch instead of individual selects
+      const createdBatch = await db.select().from(logs).where(
+        sql`id IN (${sql.join(batchWithIds.map(l => l.id), sql`, `)})`
+      );
+      allCreatedLogs.push(...createdBatch);
     }
 
     return allCreatedLogs;
@@ -709,7 +710,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNmsLogs(insertLogs: InsertNmsLog[]): Promise<NmsLog[]> {
-    const BATCH_SIZE = 500;
+    const BATCH_SIZE = 250; // Reduced from 500
     const allCreatedLogs: NmsLog[] = [];
 
     if (isUsingMySQL()) {
