@@ -440,8 +440,8 @@ async function processLog(msg: Buffer, rinfo: dgram.RemoteInfo) {
     const parsed = parseSyslogMessage(msg.toString());
     const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
 
-    // Filter logs from 10.119.20.* with user 'kazema'
-    if (sourceIp.startsWith("10.119.20.") && logDetails.operatorUsername === "kazema") {
+    // Filter logs from 10.119.20.* with user 'kazema' or 'IntegTeamAPIUser'
+    if (sourceIp.startsWith("10.119.20.") && (logDetails.operatorUsername === "kazema" || logDetails.operatorUsername === "IntegTeamAPIUser")) {
       return;
     }
 
