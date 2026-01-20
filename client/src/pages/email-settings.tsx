@@ -117,7 +117,7 @@ const emailSettingsSchema = z.object({
 const scheduledReportSchema = z.object({
   name: z.string().min(1, "Report name is required"),
   emailSubject: z.string().optional(),
-  frequency: z.enum(["daily", "weekly", "monthly", "quarterly"]),
+  frequency: z.enum(["monthly"]),
   recipients: z.string().min(1, "At least one recipient is required"),
   reportType: z.enum(["violations", "operations", "summary", "full"]),
   nmsSystemIds: z.array(z.string()).optional(),
@@ -183,7 +183,7 @@ export default function EmailSettingsPage() {
     defaultValues: {
       name: "",
       emailSubject: "",
-      frequency: "weekly",
+      frequency: "monthly",
       recipients: "",
       reportType: "summary",
       nmsSystemIds: [],
@@ -361,10 +361,7 @@ export default function EmailSettingsPage() {
   };
 
   const frequencyLabels: Record<string, string> = {
-    daily: "Daily",
-    weekly: "Weekly",
     monthly: "Monthly",
-    quarterly: "Quarterly",
   };
 
   const reportTypeLabels: Record<string, string> = {

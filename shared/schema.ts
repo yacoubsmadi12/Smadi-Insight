@@ -257,7 +257,7 @@ export const scheduledReports = pgTable("scheduled_reports", {
   name: text("name").notNull(),
   emailSubject: text("email_subject"),
   recipientEmails: text("recipient_emails").notNull(),
-  frequency: text("frequency").notNull().default("weekly"),
+  frequency: text("frequency").notNull().default("monthly"),
   reportType: text("report_type").notNull().default("summary"),
   nmsSystemId: varchar("nms_system_id", { length: 36 }),
   nmsSystemIds: text("nms_system_ids"),
