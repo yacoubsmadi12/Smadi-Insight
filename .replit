@@ -12,6 +12,10 @@ build = ["npm", "run", "build"]
 run = ["node", "./dist/index.cjs"]
 
 [[ports]]
+localPort = 443
+externalPort = 3001
+
+[[ports]]
 localPort = 5000
 externalPort = 80
 
@@ -43,5 +47,5 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "NODE_OPTIONS=\"--max-old-space-size=16384\" npm run dev"
+args = "NODE_OPTIONS=\"--max-old-space-size=8192\" npm run dev"
 waitForPort = 5000

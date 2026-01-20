@@ -20,9 +20,16 @@ export function log(message: string, source = "express") {
 }
 
 export async function setupVite(app: Express, server: Server) {
+  const isProduction = process.env.NODE_ENV === "production";
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    hmr: isProduction 
+      ? false 
+      : {
+          protocol: "wss",
+          host: process.env.REPLIT_DEVSERVER_DOMAIN || "localhost",
+          port: 443
+        },
     allowedHosts: true as const,
   };
 

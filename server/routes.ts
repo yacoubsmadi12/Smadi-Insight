@@ -18,6 +18,7 @@ import {
   insertOperatorSchema
 } from "@shared/schema";
 import { db } from "./db";
+import { employees, logs, reports, analysisReports } from "@shared/schema";
 import { sql } from "drizzle-orm";
 
 // Safe timestamp helper - handles Date objects, strings, and invalid values
@@ -453,11 +454,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/dashboard/stats", authenticateToken, async (req: Request, res: Response) => {
     try {
-      // Use counts instead of loading all employees/logs/reports
-      const totalEmployeesCount = await storage.getEmployees({}).then(emps => emps.length);
-      const logsProcessedCount = await storage.getLogs({}).then(logs => logs.length);
-      const reportsCount = await storage.getReports({}).then(reps => reps.length);
-      const analysisReportsCount = await storage.getAnalysisReports({}).then(reps => reps.length);
+      // Use direct database counts instead of loading all data into memory
+      const totalEmployeesCount = (await db.select({ count: sql<number>`count(*)` }).from(employees))[0]?.count || 0;
+      const logsProcessedCount = (await db.select({ count: sql<number>`count(*)` }).from(logs))[0]?.count || 0;
+      const reportsCount = (await db.select({ count: sql<number>`count(*)` }).from(reports))[0]?.count || 0;
+      const analysisReportsCount = (await db.select({ count: sql<number>`count(*)` }).from(analysisReports))[0]?.count || 0;
       const nmsSystems = await storage.getNmsSystems();
       const operators = await storage.getOperators({});
       
@@ -475,7 +476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             successfulLogs: stats.successful,
             failedLogs: stats.failed,
             operatorCount: systemOperators.length,
-            lastActivity: null // Optimization: remove lastActivity sort from dashboard main call
+            lastActivity: null
           };
         })
       );
@@ -484,8 +485,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const successfulOperations = globalStats.successful;
       const failedOperations = globalStats.failed;
       
-      // Get only the data needed for charts, limited to last 1000 logs for analytics instead of 50000
-      const recentNmsLogs = await storage.getNmsLogs({ limit: 1000 });
+      // Reduced limit from 1000 to 100 to reduce memory usage
+      const recentNmsLogs = await storage.getNmsLogs({ limit: 100 });
       
       const hourlyActivity = Array.from({ length: 24 }, (_, hour) => {
         const hourLogs = recentNmsLogs.filter(log => {

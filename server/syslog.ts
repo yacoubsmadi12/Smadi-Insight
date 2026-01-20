@@ -6,8 +6,8 @@ import { getSourceConfigByIp, isOperatorBlockedForSource, getAllSourceConfigs } 
 
 const SYSLOG_PORT = parseInt(process.env.SYSLOG_PORT || "514");
 
-const BATCH_SIZE = 100;
-const BATCH_INTERVAL_MS = 1000;
+const BATCH_SIZE = 50;
+const BATCH_INTERVAL_MS = 2000;
 
 const blockedStats: Map<string, number> = new Map();
 

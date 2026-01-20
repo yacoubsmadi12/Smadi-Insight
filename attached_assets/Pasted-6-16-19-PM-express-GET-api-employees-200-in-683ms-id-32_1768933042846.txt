@@ -1,0 +1,40 @@
+6:16:19 PM [express] GET /api/employees 200 in 683ms :: [{"id":"32ae4fc9-f6ca-404f-8f58-632e76ce6d52…
+6:16:19 PM [express] GET /api/email-settings 304 in 706ms :: {"id":"4500a755-abb4-46e5-b9e2-759a2a98…
+6:16:21 PM [express] GET /api/scheduled-reports 304 in 2244ms :: [{"id":"25d13f91-096e-417e-b35e-82e…
+[syslog] Batch inserted 4 NMS logs
+[syslog] Batch inserted 4 legacy logs
+[syslog] Batch inserted 4 NMS logs
+[syslog] Batch inserted 4 legacy logs
+[syslog] Batch inserted 2 NMS logs
+[syslog] Batch inserted 2 legacy logs
+6:16:27 PM [express] GET /api/dashboard/stats 200 in 144222ms :: {"totalEmployees":46,"logsProcessed…
+
+<--- Last few GCs --->
+
+[1154649:0x1f31d200]   288337 ms: Scavenge 16364.3 (16658.1) -> 16364.2 (16658.1) MB, 234.33 / 0.00 ms  (average mu = 0.949, cu
+[1154649:0x1f31d200]   288581 ms: Scavenge 16365.1 (16658.1) -> 16364.9 (16658.1) MB, 242.26 / 0.00 ms  (average mu = 0.949, cuion failure;
+[1154649:0x1f31d200]   288835 ms: Scavenge 16365.1 (16658.1) -> 16365.0 (16658.1) MB, 252.85 / 0.00 ms  (average mu = 0.949, cuion failure;
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Scavenger: semi-space copy Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0xb76dc5 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/bin/node]
+ 2: 0xee6120 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/bin/node]
+ 3: 0xee6407 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/bin/no
+ 4: 0x10f8055  [/usr/bin/node]
+ 5: 0x118ce1e heap::base::SlotCallbackResult v8::internal::Scavenger::EvacuateInPlaceInternalizableString<v8::internal::FullHea::Map, v8::internal::FullHeapObjectSlot, v8::internal::String, int, v8::internal::ObjectFields) [/usr/bin/node]
+ 6: 0x118ee0b heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::inte v8::internal::HeapObject) [/usr/bin/node]
+ 7: 0x118fda0 void v8::internal::BodyDescriptorBase::IteratePointers<v8::internal::ScavengeVisitor>(v8::internal::HeapObject, iavengeVisitor*) [/usr/bin/node]
+ 8: 0x1198d51 v8::internal::Scavenger::Process(v8::JobDelegate*) [/usr/bin/node]
+ 9: 0x119a17f v8::internal::ScavengerCollector::JobTask::ProcessItems(v8::JobDelegate*, v8::internal::Scavenger*) [/usr/bin/nod
+10: 0x119a2b5 v8::internal::ScavengerCollector::JobTask::Run(v8::JobDelegate*) [/usr/bin/node]
+11: 0x1d55578 v8::platform::DefaultJobWorker::Run() [/usr/bin/node]
+12: 0xd30cc1  [/usr/bin/node]
+13: 0x7fbe5bdf1ac3  [/lib/x86_64-linux-gnu/libc.so.6]
+14: 0x7fbe5be838c0  [/lib/x86_64-linux-gnu/libc.so.6]
+root@ai-noc:~/Smadi-Insight#
+root@ai-noc:~/Smadi-Insight#
+root@ai-noc:~/Smadi-Insight#

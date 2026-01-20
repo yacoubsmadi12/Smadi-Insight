@@ -337,7 +337,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createLogs(insertLogs: InsertLog[]): Promise<Log[]> {
-    const BATCH_SIZE = 500;
+    const BATCH_SIZE = 100;
     const allCreatedLogs: Log[] = [];
 
     for (let i = 0; i < insertLogs.length; i += BATCH_SIZE) {
@@ -709,7 +709,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNmsLogs(insertLogs: InsertNmsLog[]): Promise<NmsLog[]> {
-    const BATCH_SIZE = 1000;
+    const BATCH_SIZE = 200;
     const allCreatedLogs: NmsLog[] = [];
 
     if (isUsingMySQL()) {
