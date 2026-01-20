@@ -98,9 +98,9 @@ interface DashboardStats {
 const COLORS = ['#f59e0b', '#06b6d4', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
-  const [showViolationsDialog, setShowViolationsDialog] = useState(false);
+  const [showFailedOpsDialog, setShowFailedOpsDialog] = useState(false);
 
-  const { data: stats, isLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading } = useQuery<DashboardStats & { failedLogsList?: any[] }>({
     queryKey: ["/api/dashboard/stats"],
     queryFn: async () => {
       const res = await apiCall("/api/dashboard/stats");
@@ -212,7 +212,11 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20">
+            <Card 
+              className="bg-gradient-to-br from-red-500/10 to-red-500/5 border-red-500/20 cursor-pointer hover-elevate transition-all"
+              onClick={() => setShowFailedOpsDialog(true)}
+              data-testid="card-failed-operations"
+            >
               <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   Failed Operations
@@ -225,13 +229,12 @@ export default function DashboardPage() {
                 <div className="text-3xl font-bold text-red-500">
                   {(stats?.failedOperations || 0).toLocaleString()}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{failureRate}% failure rate</p>
+                <p className="text-xs text-muted-foreground mt-1">{failureRate}% failure rate - Click to view</p>
               </CardContent>
             </Card>
 
             <Card 
-              className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20 cursor-pointer hover-elevate transition-all"
-              onClick={() => setShowViolationsDialog(true)}
+              className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20 opacity-50"
               data-testid="card-violations"
             >
               <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
@@ -247,7 +250,7 @@ export default function DashboardPage() {
                   {stats?.totalViolations || 0}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Security alerts - Click to view details
+                  Security alerts (No recent violations)
                 </p>
               </CardContent>
             </Card>
@@ -589,83 +592,50 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <Dialog open={showViolationsDialog} onOpenChange={setShowViolationsDialog}>
+      <Dialog open={showFailedOpsDialog} onOpenChange={setShowFailedOpsDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-amber-500" />
-              Security Violations
+            <DialogTitle className="flex items-center gap-2 text-red-500">
+              <XCircle className="w-5 h-5" />
+              Latest Failed Operations
             </DialogTitle>
             <DialogDescription>
-              List of all security alerts and violations detected in the system
+              Displaying the most recent 50 failed network operations
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="h-[60vh] pr-4">
+          <ScrollArea className="h-[500px] mt-4 pr-4">
             <div className="space-y-3">
-              {violationsData && violationsData.length > 0 ? (
-                violationsData.map((violation) => (
+              {stats?.failedLogsList && stats.failedLogsList.length > 0 ? (
+                stats.failedLogsList.map((log: any, index: number) => (
                   <div 
-                    key={violation.id}
-                    className="p-4 rounded-lg bg-muted/50 border border-amber-500/20"
-                    data-testid={`violation-item-${violation.id}`}
+                    key={log.id || index} 
+                    className="flex flex-col p-3 rounded-lg bg-muted/30 border border-red-500/20"
                   >
-                    <div className="flex items-start justify-between gap-4 flex-wrap">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${
-                          violation.level === 'Critical' ? 'bg-red-500/20' : 
-                          violation.level === 'Major' ? 'bg-orange-500/20' : 'bg-amber-500/20'
-                        }`}>
-                          <AlertTriangle className={`w-4 h-4 ${
-                            violation.level === 'Critical' ? 'text-red-500' : 
-                            violation.level === 'Major' ? 'text-orange-500' : 'text-amber-500'
-                          }`} />
-                        </div>
-                        <div>
-                          <p className="font-medium">{violation.operatorUsername}</p>
-                          <p className="text-sm text-muted-foreground">{violation.operation}</p>
-                        </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-red-500 border-red-500/50">Failed</Badge>
+                        <span className="font-semibold text-sm">{log.operatorUsername}</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={violation.level === 'Critical' ? 'destructive' : 'default'}>
-                          {violation.level}
-                        </Badge>
-                        {violation.violationType && (
-                          <Badge variant="outline" className="border-amber-500/50 text-amber-500">
-                            {violation.violationType}
-                          </Badge>
-                        )}
-                        <Badge variant={violation.result === 'Successful' ? 'secondary' : 'destructive'}>
-                          {violation.result}
-                        </Badge>
-                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </span>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-border/50">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {new Date(violation.timestamp).toLocaleString()}
-                        </div>
-                        {violation.terminalIp && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Network className="w-3 h-3" />
-                            {violation.terminalIp}
-                          </div>
-                        )}
-                      </div>
-                      {violation.details && (
-                        <p className="mt-2 text-xs text-muted-foreground bg-background/50 p-2 rounded font-mono overflow-x-auto">
-                          {violation.details.substring(0, 300)}
-                          {violation.details.length > 300 && '...'}
-                        </p>
-                      )}
+                    <p className="text-sm font-medium mb-1">{log.operation}</p>
+                    {log.details && (
+                      <p className="text-xs text-muted-foreground bg-black/20 p-2 rounded mt-1 font-mono">
+                        {log.details}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 mt-2 text-[10px] text-muted-foreground">
+                      <span>IP: {log.terminalIp || 'N/A'}</span>
+                      <span>Level: {log.level}</span>
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-12 text-muted-foreground">
-                  <Shield className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium">No Violations Found</p>
-                  <p className="text-sm">The system is operating normally with no security alerts</p>
+                  <CheckCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                  <p>No failed operations found in recent records</p>
                 </div>
               )}
             </div>

@@ -1,0 +1,66 @@
+syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 14 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 14 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 2 NMS logs
+[syslog] Batch inserted 2 legacy logs
+[syslog] Batch inserted 3 NMS logs
+[syslog] Batch inserted 3 legacy logs
+[syslog] Batch inserted 3 NMS logs
+[syslog] Batch inserted 3 legacy logs
+[syslog] Batch inserted 2 NMS logs
+[syslog] Batch inserted 2 legacy logs
+[syslog] Batch inserted 3 NMS logs
+[syslog] Batch inserted 3 legacy logs
+[syslog] Batch inserted 2 NMS logs
+[syslog] Batch inserted 2 legacy logs
+[syslog] Batch inserted 2 NMS logs
+[syslog] Batch inserted 2 legacy logs
+[syslog] Batch inserted 5 NMS logs
+[syslog] Batch inserted 5 legacy logs
+4:12:22 PM [express] GET /api/nms-systems/6d7fd29f-6b5b-489e-8074-889d0c1aed7d 304 in 73ms :: {"id":…
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 18 NMS logs
+4:12:28 PM [express] POST /api/nms-systems/6d7fd29f-6b5b-489e-8074-889d0c1aed7d/analyze 200 in 6113m…
+[syslog] Batch inserted 18 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 13 NMS logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 20 legacy logs
+[syslog] Batch inserted 13 legacy logs
+[syslog] Batch inserted 4 NMS logs
+[syslog] Batch inserted 4 legacy logs
+4:12:40 PM [express] GET /api/managers 304 in 4ms :: []
+4:12:40 PM [express] GET /api/operator-groups 304 in 3ms :: []
+4:12:40 PM [express] GET /api/operators 304 in 2ms :: []
+4:12:53 PM [express] GET /api/dashboard/stats 200 in 153161ms :: {"totalEmployees":46,"logsProcessed…
+

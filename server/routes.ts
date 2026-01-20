@@ -540,6 +540,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .sort((a, b) => safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime())
         .slice(0, 20);
 
+      const failedLogsList = allNmsLogs
+        .filter(l => l.result === 'Failed')
+        .sort((a, b) => safeTimestamp(b.timestamp).getTime() - safeTimestamp(a.timestamp).getTime())
+        .slice(0, 50);
+
       res.json({
         totalEmployees: employees.length,
         logsProcessed: logs.length,
@@ -550,13 +555,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalNmsLogs: globalStats.total,
         successfulOperations,
         failedOperations,
-        totalViolations,
+        totalViolations: 0, // Reset violations to 0 as requested
         operatorCount: operators.length,
         nmsSystems: nmsSystemStats,
         hourlyActivity,
         dailyActivity,
         topOperations,
-        recentLogs
+        recentLogs,
+        failedLogsList
       });
     } catch (error: any) {
       console.error("Dashboard stats error:", error);

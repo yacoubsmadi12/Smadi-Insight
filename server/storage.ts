@@ -765,13 +765,13 @@ export class DatabaseStorage implements IStorage {
     const allLogs = await db.select({ count: count() }).from(nmsLogs);
     const successLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.result, "Successful"));
     const failedLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.result, "Failed"));
-    const violationLogs = await db.select({ count: count() }).from(nmsLogs).where(eq(nmsLogs.isViolation, true));
-
+    
+    // violations set to 0 as requested
     return {
       total: Number(allLogs[0]?.count || 0),
       successful: Number(successLogs[0]?.count || 0),
       failed: Number(failedLogs[0]?.count || 0),
-      violations: Number(violationLogs[0]?.count || 0),
+      violations: 0,
     };
   }
 
