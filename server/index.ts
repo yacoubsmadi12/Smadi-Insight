@@ -101,13 +101,15 @@ async function seedDefaultAdmin() {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
+    log(`[system] Application started and serving on port ${port}`);
+    log(`[system] Environment: ${process.env.NODE_ENV || 'development'}`);
+    log(`[system] Memory Limit: ${process.env.NODE_OPTIONS || 'Default'}`);
     
     // Start Syslog UDP server
     try {
       startSyslogServer();
     } catch (error) {
-      console.error("Failed to start Syslog server:", error);
+      console.error("[syslog] Failed to start Syslog server:", error);
     }
   });
 })();

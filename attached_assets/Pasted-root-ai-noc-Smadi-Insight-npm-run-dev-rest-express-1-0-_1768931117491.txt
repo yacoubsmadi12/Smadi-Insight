@@ -1,0 +1,45 @@
+root@ai-noc:~/Smadi-Insight# npm run dev
+
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+5:36:36 PM [express] serving on port 5000
+[syslog] UDP server listening on 0.0.0.0:514
+[syslog] Batch size: 20, Interval: 500ms
+Browserslist: browsers data (caniuse-lite) is 15 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+[syslog] Batch inserted 20 NMS logs
+[syslog] Batch inserted 9 legacy logs
+[syslog] Batch inserted 1 NMS logs
+[syslog] Batch inserted 12 legacy logs
+[syslog] Batch inserted 2 NMS logs
+[syslog] Batch inserted 2 legacy logs
+
+
+<--- Last few GCs --->
+
+[1153765:0x227a7200]   130909 ms: Scavenge 16513.9 (16807.1) -> 16513.9 (16807.1) MB, 330.51 / 0.00 ms  (average mu = 0.940, current mu = 0.938) allocation failure;
+[1153765:0x227a7200]   131257 ms: Scavenge 16513.9 (16807.1) -> 16513.8 (16807.1) MB, 347.83 / 0.00 ms  (average mu = 0.940, current mu = 0.938) allocation failure;
+[1153765:0x227a7200]   131588 ms: Scavenge 16513.9 (16807.1) -> 16513.9 (16807.1) MB, 330.62 / 0.00 ms  (average mu = 0.940, current mu = 0.938) allocation failure;
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Scavenger: semi-space copy Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0xb76dc5 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/bin/node]
+ 2: 0xee6120 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/bin/node]
+ 3: 0xee6407 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/bin/node]
+ 4: 0x10f8055  [/usr/bin/node]
+ 5: 0x118f3a0 heap::base::SlotCallbackResult v8::internal::Scavenger::ScavengeObject<v8::internal::FullHeapObjectSlot>(v8::internal::FullHeapObjectSlot, v8::internal::HeapObject) [/usr/bin/node]
+ 6: 0x1199453 v8::internal::Scavenger::Process(v8::JobDelegate*) [/usr/bin/node]
+ 7: 0x119a17f v8::internal::ScavengerCollector::JobTask::ProcessItems(v8::JobDelegate*, v8::internal::Scavenger*) [/usr/bin/node]
+ 8: 0x119a2b5 v8::internal::ScavengerCollector::JobTask::Run(v8::JobDelegate*) [/usr/bin/node]
+ 9: 0x1d55578 v8::platform::DefaultJobWorker::Run() [/usr/bin/node]
+10: 0xd30cc1  [/usr/bin/node]
+11: 0x7f14cb659ac3  [/lib/x86_64-linux-gnu/libc.so.6]
+12: 0x7f14cb6eb8c0  [/lib/x86_64-linux-gnu/libc.so.6]
+root@ai-noc:~/Smadi-Insight#
+root@ai-noc:~/Smadi-Insight#
