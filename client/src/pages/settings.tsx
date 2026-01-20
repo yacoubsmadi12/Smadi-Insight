@@ -323,49 +323,102 @@ export default function SettingsPage() {
                   <Cpu className="w-5 h-5 text-primary" />
                   System Information
                 </CardTitle>
-                <CardDescription>Server resource monitoring</CardDescription>
+                <CardDescription>Server resource monitoring and database status</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {systemInfoLoading ? (
+              <CardContent className="space-y-6">
+                {systemInfoLoading || dbStatsLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : systemInfo ? (
                   <>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Cpu className="w-4 h-4 text-cyan-500" />
-                        <span className="text-sm">CPU Load</span>
+                    {/* CPU Information */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Cpu className="w-4 h-4 text-cyan-500" />
+                          <span className="text-sm font-medium">CPU Load</span>
+                        </div>
+                        <Badge variant="outline">{systemInfo.cpu.loadAverage}</Badge>
                       </div>
-                      <Badge variant="outline">{systemInfo.cpu.loadAverage} ({systemInfo.cpu.cores} cores)</Badge>
+                      <p className="text-xs text-muted-foreground">{systemInfo.cpu.cores} cores available</p>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
+
+                    {/* Memory Information */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <MemoryStick className="w-4 h-4 text-purple-500" />
-                          <span className="text-sm">Memory</span>
+                          <span className="text-sm font-medium">RAM Memory</span>
                         </div>
                         <Badge variant="outline">{systemInfo.memory.usagePercent}</Badge>
                       </div>
-                      <Progress value={parseFloat(systemInfo.memory.usagePercent)} className="h-2" />
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>Used: {systemInfo.memory.used}</span>
-                        <span>Free: {systemInfo.memory.free}</span>
+                      <Progress value={parseFloat(systemInfo.memory.usagePercent)} className="h-2 mb-2" />
+                      <div className="grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <p className="text-xs">Total</p>
+                          <p className="font-medium text-foreground">{systemInfo.memory.total}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs">Used</p>
+                          <p className="font-medium text-foreground">{systemInfo.memory.used}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs">Free</p>
+                          <p className="font-medium text-foreground">{systemInfo.memory.free}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-green-500" />
-                        <span className="text-sm">Uptime</span>
+
+                    {/* Database Status */}
+                    {dbStats && (
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Database className="w-4 h-4 text-blue-500" />
+                            <span className="text-sm font-medium">Database Records</span>
+                          </div>
+                          <Badge variant="outline" className="bg-blue-500/20 text-blue-700 dark:text-blue-400">
+                            {(dbStats.nms.logs + dbStats.nms.analysisReports + dbStats.legacy.logs + dbStats.legacy.reports).toLocaleString()} total
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2 rounded-md bg-muted/50">
+                            <p className="text-muted-foreground">NMS Logs</p>
+                            <p className="font-medium">{dbStats.nms.logs.toLocaleString()}</p>
+                          </div>
+                          <div className="p-2 rounded-md bg-muted/50">
+                            <p className="text-muted-foreground">Analysis Reports</p>
+                            <p className="font-medium">{dbStats.nms.analysisReports.toLocaleString()}</p>
+                          </div>
+                          <div className="p-2 rounded-md bg-muted/50">
+                            <p className="text-muted-foreground">Activity Logs</p>
+                            <p className="font-medium">{dbStats.legacy.logs.toLocaleString()}</p>
+                          </div>
+                          <div className="p-2 rounded-md bg-muted/50">
+                            <p className="text-muted-foreground">Employee Reports</p>
+                            <p className="font-medium">{dbStats.legacy.reports.toLocaleString()}</p>
+                          </div>
+                        </div>
                       </div>
-                      <Badge variant="outline">{formatUptime(systemInfo.uptime)}</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <HardDrive className="w-4 h-4 text-amber-500" />
-                        <span className="text-sm">Platform</span>
+                    )}
+
+                    {/* Server Information */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Activity className="w-4 h-4 text-green-500" />
+                          <span className="text-xs font-medium">Uptime</span>
+                        </div>
+                        <Badge variant="secondary">{formatUptime(systemInfo.uptime)}</Badge>
                       </div>
-                      <Badge variant="outline">{systemInfo.platform}</Badge>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <HardDrive className="w-4 h-4 text-amber-500" />
+                          <span className="text-xs font-medium">Platform</span>
+                        </div>
+                        <Badge variant="secondary">{systemInfo.platform}</Badge>
+                      </div>
                     </div>
                   </>
                 ) : (
