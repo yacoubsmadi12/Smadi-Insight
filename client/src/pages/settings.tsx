@@ -84,7 +84,7 @@ export default function SettingsPage() {
   const { language, setLanguage, t } = useLanguage();
   const { toast } = useToast();
   
-  const [deleteType, setDeleteType] = useState<"nms" | "legacy">("nms");
+  const [deleteType, setDeleteType] = useState<string>("nmsLogs");
   const [startDate, setStartDate] = useState(format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
@@ -113,7 +113,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           startDate: new Date(startDate).toISOString(),
           endDate: new Date(endDate + "T23:59:59").toISOString(),
-          type: deleteType
+          tableName: deleteType
         })
       });
       if (!res.ok) {
@@ -430,20 +430,34 @@ export default function SettingsPage() {
                   Partial Log Cleanup
                 </h3>
                 <div className="bg-muted/30 p-4 rounded-xl space-y-4">
-                  <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit">
+                  <div className="flex items-center gap-2 bg-muted p-1 rounded-lg w-fit overflow-x-auto max-w-full">
                     <Button
-                      variant={deleteType === "nms" ? "default" : "ghost"}
+                      variant={deleteType === "nmsLogs" ? "default" : "ghost"}
                       size="sm"
-                      onClick={() => setDeleteType("nms")}
+                      onClick={() => setDeleteType("nmsLogs")}
                     >
                       NMS Logs
                     </Button>
                     <Button
-                      variant={deleteType === "legacy" ? "default" : "ghost"}
+                      variant={deleteType === "logs" ? "default" : "ghost"}
                       size="sm"
-                      onClick={() => setDeleteType("legacy")}
+                      onClick={() => setDeleteType("logs")}
                     >
-                      Legacy Logs
+                      Activity Logs
+                    </Button>
+                    <Button
+                      variant={deleteType === "analysisReports" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setDeleteType("analysisReports")}
+                    >
+                      Analysis Reports
+                    </Button>
+                    <Button
+                      variant={deleteType === "reports" ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setDeleteType("reports")}
+                    >
+                      Employee Reports
                     </Button>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-end">

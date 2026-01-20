@@ -906,6 +906,26 @@ export class DatabaseStorage implements IStorage {
     return result.length;
   }
 
+  async deleteTableDataByDate(tableName: string, startDate: Date, endDate: Date): Promise<number> {
+    const tableMap: Record<string, any> = {
+      'nmsLogs': { table: nmsLogs, dateCol: nmsLogs.timestamp },
+      'logs': { table: logs, dateCol: logs.timestamp },
+      'analysisReports': { table: analysisReports, dateCol: analysisReports.createdAt },
+      'reports': { table: reports, dateCol: reports.createdAt }
+    };
+
+    const config = tableMap[tableName];
+    if (!config) throw new Error(`Table ${tableName} does not support date-based deletion`);
+
+    const result = await db.delete(config.table).where(
+      and(
+        gte(config.dateCol, startDate),
+        lte(config.dateCol, endDate)
+      )
+    );
+    return result.length;
+  }
+
   async clearTable(tableName: string): Promise<number> {
     const tableMap: Record<string, any> = {
       'nmsLogs': nmsLogs,

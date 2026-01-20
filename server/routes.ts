@@ -1363,7 +1363,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/delete-logs-by-date", authenticateToken, async (req: Request, res: Response) => {
     try {
-      const { startDate, endDate, type } = req.body;
+      const { startDate, endDate, type, tableName } = req.body;
       if (!startDate || !endDate) {
         return res.status(400).json({ message: "Start and end dates are required" });
       }
@@ -1372,17 +1372,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const end = new Date(endDate);
 
       let count = 0;
-      if (type === "nms") {
+      if (tableName) {
+        // New unified method
+        count = await storage.deleteTableDataByDate(tableName, start, end);
+      } else if (type === "nms") {
         count = await storage.deleteNmsLogsByDate(start, end);
       } else if (type === "legacy") {
         count = await storage.deleteLegacyLogsByDate(start, end);
       } else {
-        return res.status(400).json({ message: "Invalid log type" });
+        return res.status(400).json({ message: "Invalid deletion request" });
       }
 
-      res.json({ message: "Logs deleted successfully", count });
+      res.json({ message: "Data deleted successfully", count });
     } catch (error: any) {
-      console.error("Delete logs error:", error);
+      console.error("Delete data by date error:", error);
       res.status(500).json({ message: error.message });
     }
   });
