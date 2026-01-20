@@ -440,6 +440,11 @@ async function processLog(msg: Buffer, rinfo: dgram.RemoteInfo) {
     const parsed = parseSyslogMessage(msg.toString());
     const logDetails = parseNmsLogFromMessage(parsed.message, parsed.hostname);
 
+    // Filter logs from 10.119.20.* with user 'kazema'
+    if (sourceIp.startsWith("10.119.20.") && logDetails.operatorUsername === "kazema") {
+      return;
+    }
+
     const sourceConfig = getSourceConfigByIp(sourceIp);
     if (sourceConfig && isOperatorBlockedForSource(sourceIp, logDetails.operatorUsername)) {
       const key = `${sourceConfig.name}:${logDetails.operatorUsername}`;

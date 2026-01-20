@@ -544,7 +544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalNmsLogs: globalStats.total,
         successfulOperations,
         failedOperations,
-        totalViolations: 0,
+        totalViolations: globalStats.violations,
         operatorCount: operators.length,
         nmsSystems: nmsSystemStats,
         hourlyActivity,
